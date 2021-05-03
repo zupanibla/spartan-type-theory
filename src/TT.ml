@@ -15,6 +15,7 @@ type expr =
   | Prod of (Name.ident * ty) * ty (** dependent product *)
   | Lambda of (Name.ident * ty) * expr (** lambda abstraction *)
   | Apply of expr * expr (** application *)
+  | Nat (** the type of natural numbers *)
 
 (** Type *)
 and ty = Ty of expr
@@ -57,6 +58,8 @@ let rec instantiate ?(lvl=0) e e' =
      and e2 = instantiate ~lvl e e2 in
      Apply (e1, e2)
 
+  | Nat -> e'
+
 
 (** [instantiate k e t] instantiates deBruijn index [k] with [e] in type [t]. *)
 and instantiate_ty ?(lvl=0) e (Ty t) =
@@ -88,6 +91,8 @@ let rec abstract ?(lvl=0) x e =
      and e2 = abstract ~lvl x e2 in
      Apply (e1, e2)
 
+  | Nat -> e
+
 (** [abstract_ty ~lvl x t] abstracts atom [x] into bound index [lvl] in type [t]. *)
 and abstract_ty ?(lvl=0) x (Ty t) =
   let t = abstract ~lvl x t in
@@ -107,6 +112,7 @@ let rec occurs k = function
   | Prod ((_, t), u) -> occurs_ty k t || occurs_ty (k+1) u
   | Lambda ((_, t), e) -> occurs_ty k t || occurs (k+1) e
   | Apply (e1, e2) -> occurs k e1 || occurs k e2
+  | Nat -> false
 
 (** [occurs_ty k t] returns [true] when de Bruijn index [k] occurs in type [t]. *)
 and occurs_ty k (Ty t) = occurs k t
@@ -154,6 +160,8 @@ and print_expr' ~penv ?max_level e ppf =
       | Apply (e1, e2) -> print_app ?max_level ~penv e1 e2 ppf
 
       | Prod ((x, u), t) -> print_prod ?max_level ~penv ((x, u), t) ppf
+
+      | Nat -> Format.fprintf ppf "N"
 
 and print_ty ?max_level ~penv (Ty t) ppf = print_expr ?max_level ~penv t ppf
 

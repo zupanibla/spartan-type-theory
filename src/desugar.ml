@@ -79,6 +79,8 @@ let rec expr ctx {Location.data=e; Location.loc=loc} =
        and e2 = expr ctx e2 in
        Location.locate ~loc (Syntax.Apply (e1, e2))
 
+    | Input.Nat -> Location.locate ~loc Syntax.Nat
+
     | Input.Ascribe (e, t) ->
        let e = expr ctx e
        and t = ty ctx t in

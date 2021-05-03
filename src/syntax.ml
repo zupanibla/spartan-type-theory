@@ -11,6 +11,7 @@ and expr' =
   | Prod of (Name.ident * ty) * ty
   | Lambda of (Name.ident * ty option) * expr
   | Apply of expr * expr
+  | Nat
   | Ascribe of expr * ty
 
 (** Types (equal to expressions at this point). *)
@@ -50,6 +51,8 @@ and shift' n k = function
      let e1 = shift n k e1
      and e2 = shift n k e2 in
      Apply (e1, e2)
+
+  | Nat -> Nat
 
   | Ascribe (e, t) ->
      let e = shift n k e

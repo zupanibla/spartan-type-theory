@@ -14,6 +14,7 @@ type expr =
   | Prod of (Name.ident * ty) * ty (** dependent product *)
   | Lambda of (Name.ident * ty) * expr (** lambda abstraction *)
   | Apply of expr * expr (** application *)
+  | Nat (** the type of natural numbers *)
 
 (** Type *)
 and ty = Ty of expr
