@@ -40,9 +40,9 @@ let rec norm_expr ~strategy ctx e =
       | _ -> TT.Apply (e1, e2)
     end
 
-  | TT.Nat    -> e
-  | TT.Zero   -> e
-  | TT.Succ _ -> e
+  | TT.Nat  -> e
+  | TT.Zero -> e
+  | TT.Succ -> e
 
 
 (** Normalize a type *)
@@ -81,7 +81,7 @@ let rec expr ctx e1 e2 ty =
     | TT.Atom _
     | TT.Nat
     | TT.Zero
-    | TT.Succ _ (* TODO *)
+    | TT.Succ
     ->
       (* Type-directed phase is done, we compare normal forms. *)
       let e1 = norm_expr ~strategy:WHNF ctx e1
@@ -138,9 +138,9 @@ and expr_whnf ctx e1 e2 =
 
   | TT.Nat, TT.Nat -> true
   | TT.Zero, TT.Zero -> true
-  | TT.Succ e1, TT.Succ e2 -> expr_whnf ctx e1 e2
+  | TT.Succ, TT.Succ -> true
 
-  | (TT.Type | TT.Bound _ | TT.Atom _ | TT.Prod _ | TT.Lambda _ | TT.Apply _ | TT.Nat | TT.Zero | TT.Succ _), _ ->
+  | (TT.Type | TT.Bound _ | TT.Atom _ | TT.Prod _ | TT.Lambda _ | TT.Apply _ | TT.Nat | TT.Zero | TT.Succ), _ ->
     false
 
 (** Compare two types. *)

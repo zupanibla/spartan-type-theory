@@ -79,13 +79,15 @@ let rec expr ctx {Location.data=e; Location.loc=loc} =
        and e2 = expr ctx e2 in
        Location.locate ~loc (Syntax.Apply (e1, e2))
 
-    | Input.Nat       -> Location.locate ~loc Syntax.Nat
-    | Input.Zero      -> Location.locate ~loc Syntax.Zero
-    | Input.Succ e1   -> Location.locate ~loc ( Syntax.Succ (expr ctx e1) )
+    | Input.Nat  -> Location.locate ~loc Syntax.Nat
+    | Input.Zero -> Location.locate ~loc Syntax.Zero
+    | Input.Succ -> Location.locate ~loc Syntax.Succ
     | Input.Numeral n -> 
         let rec f k = 
             if k == 0 then Location.locate ~loc Syntax.Zero
-                      else Location.locate ~loc (  Syntax.Succ ( f (k - 1) )  ) 
+                      else let s = Location.locate ~loc Syntax.Succ
+                           and m = f (k - 1)
+                           in  Location.locate ~loc ( Syntax.Apply (s, m) ) 
         in f(n)
 
     | Input.Ascribe (e, t) ->

@@ -100,7 +100,6 @@ plain_prefix_term:
       let op = Location.locate ~loc (Input.Var op) in
       Input.Apply (op, e2)
     }
-  | SUCC LPAREN e=term RPAREN                   { Input.Succ e }
 
 (* simple_term : mark_location(plain_simple_term) { $1 } *)
 plain_simple_term:
@@ -108,6 +107,7 @@ plain_simple_term:
   | TYPE                               { Input.Type }
   | NAT                                { Input.Nat }
   | ZERO                               { Input.Zero }
+  | SUCC                               { Input.Succ }
   | NUMERAL                            { Input.Numeral $1 }
   | x=var_name                         { Input.Var x }
 

@@ -13,7 +13,7 @@ and expr' =
   | Apply of expr * expr
   | Nat
   | Zero
-  | Succ of expr
+  | Succ
   | Ascribe of expr * ty
 
 (** Types (equal to expressions at this point). *)
@@ -56,7 +56,7 @@ and shift' n k = function
 
   | Nat     -> Nat
   | Zero    -> Zero
-  | Succ e1 -> Succ (shift n k e1)
+  | Succ    -> Succ
 
   | Ascribe (e, t) ->
      let e = shift n k e

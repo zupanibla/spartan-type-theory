@@ -16,7 +16,7 @@ type expr =
   | Apply of expr * expr (** application *)
   | Nat (** the type of natural numbers *)
   | Zero (** the natural number zero *)
-  | Succ of expr (** successor of a natural number *)
+  | Succ (** successor of a natural number *)
 
 (** Type *)
 and ty = Ty of expr

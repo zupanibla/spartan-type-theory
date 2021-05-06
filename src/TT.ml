@@ -17,7 +17,7 @@ type expr =
   | Apply of expr * expr (** application *)
   | Nat (** the type of natural numbers *)
   | Zero (** the natural number zero *)
-  | Succ of expr (** successor of a natural number *)
+  | Succ (** successor of a natural number *)
 
 (** Type *)
 and ty = Ty of expr
@@ -63,9 +63,9 @@ let rec instantiate ?(lvl=0) e e' =
      and e2 = instantiate ~lvl e e2 in
      Apply (e1, e2)
 
-  | Nat     -> e'
-  | Zero    -> e'
-  | Succ e1 -> Succ (instantiate ~lvl e e1)
+  | Nat  -> e'
+  | Zero -> e'
+  | Succ -> e'
 
 
 (** [instantiate k e t] instantiates deBruijn index [k] with [e] in type [t]. *)
@@ -98,9 +98,9 @@ let rec abstract ?(lvl=0) x e =
      and e2 = abstract ~lvl x e2 in
      Apply (e1, e2)
 
-  | Nat     -> e
-  | Zero    -> e
-  | Succ e1 -> e
+  | Nat  -> e
+  | Zero -> e
+  | Succ -> e
 
 (** [abstract_ty ~lvl x t] abstracts atom [x] into bound index [lvl] in type [t]. *)
 and abstract_ty ?(lvl=0) x (Ty t) =
@@ -121,9 +121,9 @@ let rec occurs k = function
   | Prod ((_, t), u) -> occurs_ty k t || occurs_ty (k+1) u
   | Lambda ((_, t), e) -> occurs_ty k t || occurs (k+1) e
   | Apply (e1, e2) -> occurs k e1 || occurs k e2
-  | Nat     -> false
-  | Zero    -> false
-  | Succ e1 -> occurs k e1
+  | Nat  -> false
+  | Zero -> false
+  | Succ -> false
 
 
 (** [occurs_ty k t] returns [true] when de Bruijn index [k] occurs in type [t]. *)
@@ -173,9 +173,9 @@ and print_expr' ~penv ?max_level e ppf =
 
       | Prod ((x, u), t) -> print_prod ?max_level ~penv ((x, u), t) ppf
 
-      | Nat     -> Format.fprintf ppf "N"
-      | Zero    -> Format.fprintf ppf "zero"
-      | Succ e1 -> Print.print ppf "succ(%t)" (print_expr ?max_level ~penv e1)
+      | Nat  -> Format.fprintf ppf "N"
+      | Zero -> Format.fprintf ppf "zero"
+      | Succ -> Format.fprintf ppf "succ"
 
 and print_ty ?max_level ~penv (Ty t) ppf = print_expr ?max_level ~penv t ppf
 
