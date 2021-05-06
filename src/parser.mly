@@ -15,11 +15,13 @@
 
 (* Expressions *)
 %token TYPE
+%token PROD
+%token LAMBDA
+
 %token NAT
 %token ZERO
 %token SUCC
-%token PROD
-%token LAMBDA
+%token <int> NUMERAL
 
 (* Toplevel commands *)
 
@@ -106,6 +108,7 @@ plain_simple_term:
   | TYPE                               { Input.Type }
   | NAT                                { Input.Nat }
   | ZERO                               { Input.Zero }
+  | NUMERAL                            { Input.Numeral $1 }
   | x=var_name                         { Input.Var x }
 
 var_name:

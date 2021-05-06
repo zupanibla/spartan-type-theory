@@ -12,6 +12,7 @@ and expr' =
   | Nat
   | Zero
   | Succ of expr
+  | Numeral of int
   | Ascribe of expr * ty
 
 (** Parsed type (equal to expression). *)

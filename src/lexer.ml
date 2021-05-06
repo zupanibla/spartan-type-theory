@@ -25,10 +25,10 @@ let name =
                       | 185 | 178 | 179 | 8304 .. 8351 (* sub-/super-scripts *)
                       | '0'..'9' | '\'')) | math]
 
-(*
+
 let digit = [%sedlex.regexp? '0'..'9']
-let numeral = [%sedlex.regexp? Opt '-', Plus digit]
-*)
+let numeral = [%sedlex.regexp? Plus digit]
+
 
 let symbolchar = [%sedlex.regexp?  ('!' | '$' | '%' | '&' | '*' | '+' | '-' | '.' | '/' | ':' | '<' | '=' | '>' | '?' | '@' | '^' | '|' | '~')]
 
@@ -115,9 +115,9 @@ and token_aux ({ Ulexbuf.stream;_ } as lexbuf) =
     begin try List.assoc n reserved
     with Not_found -> Parser.NAME (Name.Ident (n, Name.Word))
     end
-(*
-  | numeral                  -> f (); let k = safe_int_of_string lexbuf in NUMERAL k
-*)
+
+  | numeral                  -> f (); let k = safe_int_of_string lexbuf in Parser.NUMERAL k
+
   | any -> f ();
      let w = Ulexbuf.lexeme lexbuf in
      let loc = loc_of lexbuf in
