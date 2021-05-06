@@ -15,12 +15,16 @@ type expr =
   | Lambda of (Name.ident * ty) * expr (** lambda abstraction *)
   | Apply of expr * expr (** application *)
   | Nat (** the type of natural numbers *)
+  | Zero (** the natural number zero *)
 
 (** Type *)
 and ty = Ty of expr
 
 (** [Type] as a type. *)
 val ty_Type : ty
+
+(** [Nat] as a type. *)
+val ty_Nat : ty
 
 (** The name of an atom *)
 val atom_name : atom -> Name.ident

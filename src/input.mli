@@ -10,6 +10,7 @@ and expr' =
   | Apply of expr * expr
   | Arrow of expr * expr
   | Nat
+  | Zero
   | Ascribe of expr * ty
 
 (** Parsed type (equal to expression). *)

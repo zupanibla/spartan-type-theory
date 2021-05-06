@@ -86,6 +86,10 @@ let rec infer ctx {Location.data=e'; loc} =
      TT.Nat,
      TT.ty_Type
 
+  | Syntax.Zero ->
+     TT.Zero,
+     TT.ty_Nat
+
   | Syntax.Ascribe (e, t) ->
      let t = check_ty ctx t in
      let e = check ctx e t in
@@ -113,6 +117,7 @@ and check ctx ({Location.data=e'; loc} as e) ty =
   | Syntax.Var _
   | Syntax.Type
   | Syntax.Nat
+  | Syntax.Zero
   | Syntax.Ascribe _ ->
      let e, ty' = infer ctx e in
      if Equal.ty ctx ty ty'

@@ -16,6 +16,7 @@
 (* Expressions *)
 %token TYPE
 %token NAT
+%token ZERO
 %token PROD
 %token LAMBDA
 
@@ -102,6 +103,7 @@ plain_simple_term:
   | LPAREN e=plain_term RPAREN         { e }
   | TYPE                               { Input.Type }
   | NAT                                { Input.Nat }
+  | ZERO                               { Input.Zero }
   | x=var_name                         { Input.Var x }
 
 var_name:

@@ -12,6 +12,7 @@ and expr' =
   | Lambda of (Name.ident * ty option) * expr
   | Apply of expr * expr
   | Nat
+  | Zero
   | Ascribe of expr * ty
 
 (** Types (equal to expressions at this point). *)
@@ -53,6 +54,8 @@ and shift' n k = function
      Apply (e1, e2)
 
   | Nat -> Nat
+
+  | Zero -> Zero
 
   | Ascribe (e, t) ->
      let e = shift n k e

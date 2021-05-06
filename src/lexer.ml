@@ -10,6 +10,7 @@ let reserved = [
   ("λ", Parser.LAMBDA) ;
   ("Load", Parser.LOAD) ;
   ("N", Parser.NAT) ;
+  ("zero", Parser.ZERO) ;
   ("forall", Parser.PROD) ;
   ("∀", Parser.PROD) ;
   ("Π", Parser.PROD) ;
