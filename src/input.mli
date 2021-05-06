@@ -11,6 +11,7 @@ and expr' =
   | Arrow of expr * expr
   | Nat
   | Zero
+  | Succ of expr
   | Ascribe of expr * ty
 
 (** Parsed type (equal to expression). *)

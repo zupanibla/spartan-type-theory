@@ -17,6 +17,7 @@
 %token TYPE
 %token NAT
 %token ZERO
+%token SUCC
 %token PROD
 %token LAMBDA
 
@@ -97,6 +98,7 @@ plain_prefix_term:
       let op = Location.locate ~loc (Input.Var op) in
       Input.Apply (op, e2)
     }
+  | SUCC LPAREN e=term RPAREN                   { Input.Succ e }
 
 (* simple_term : mark_location(plain_simple_term) { $1 } *)
 plain_simple_term:
