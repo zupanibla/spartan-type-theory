@@ -100,7 +100,9 @@ let rec abstract ?(lvl=0) x e =
 
   | Nat     -> e
   | Zero    -> e
-  | Succ e1 -> e
+  | Succ e1 ->
+     let e1 = abstract ~lvl x e1 in
+     Succ e1
 
 (** [abstract_ty ~lvl x t] abstracts atom [x] into bound index [lvl] in type [t]. *)
 and abstract_ty ?(lvl=0) x (Ty t) =
