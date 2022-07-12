@@ -17,6 +17,7 @@ type expr =
   | Nat (** the type of natural numbers *)
   | Zero (** the natural number zero *)
   | Succ of expr (** successor of a natural number *)
+  | IndNat of expr * expr * expr * expr (** induction on natural numbers *)
 
 (** Type *)
 and ty = Ty of expr

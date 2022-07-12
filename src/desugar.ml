@@ -81,12 +81,14 @@ let rec expr ctx {Location.data=e; Location.loc=loc} =
 
     | Input.Nat       -> Location.locate ~loc Syntax.Nat
     | Input.Zero      -> Location.locate ~loc Syntax.Zero
-    | Input.Succ e1   -> Location.locate ~loc ( Syntax.Succ (expr ctx e1) )
-    | Input.Numeral n -> 
-        let rec f k = 
+    | Input.Succ e1   -> Location.locate ~loc (Syntax.Succ (expr ctx e1))
+    | Input.Numeral n ->
+        let rec f k =
             if k == 0 then Location.locate ~loc Syntax.Zero
-                      else Location.locate ~loc (  Syntax.Succ ( f (k - 1) )  ) 
+                      else Location.locate ~loc (Syntax.Succ (f (k-1)))
         in f(n)
+    | Input.IndNat (e1, e2, e3, e4) -> Location.locate ~loc
+         (Syntax.IndNat ((expr ctx e1), (expr ctx e2), (expr ctx e3), (expr ctx e4)))
 
     | Input.Ascribe (e, t) ->
        let e = expr ctx e

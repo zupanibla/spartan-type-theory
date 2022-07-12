@@ -14,6 +14,7 @@ and expr' =
   | Nat
   | Zero
   | Succ of expr
+  | IndNat of expr * expr * expr * expr
   | Ascribe of expr * ty
 
 (** Types (equal to expressions at this point). *)
@@ -57,6 +58,12 @@ and shift' n k = function
   | Nat     -> Nat
   | Zero    -> Zero
   | Succ e1 -> Succ (shift n k e1)
+  | IndNat (e1, e2, e3, e4) ->
+     let e1 = shift n k e1
+     and e2 = shift n k e2
+     and e3 = shift n k e3
+     and e4 = shift n k e4 in
+     IndNat (e1, e2, e3, e4)
 
   | Ascribe (e, t) ->
      let e = shift n k e

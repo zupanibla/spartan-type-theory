@@ -82,6 +82,21 @@ let rec infer ctx {Location.data=e'; loc} =
           TT.instantiate_ty e2 u
      end
 
+  | Syntax.IndNat (p, p0, ps, n) ->
+     let p  = check ctx p  (TT.Ty (TT.Prod ((Name.anonymous (), TT.ty_Nat), TT.ty_Type))) in
+     let p0 = check ctx p0 (TT.Ty (TT.Apply (p, TT.Zero))) in
+     let m  = TT.new_atom (Name.anonymous ()) in
+     let ps = check ctx ps (
+        TT.Ty (TT.Prod ((TT.atom_name m, TT.ty_Nat),
+           TT.Ty (TT.Prod ((Name.anonymous (), TT.Ty (TT.Apply (p, TT.Atom m))),
+              TT.Ty (TT.Apply (p, TT.Succ (TT.Atom m)))
+           ))
+        )
+     )) in
+     let n  = check ctx n TT.ty_Nat in
+     TT.IndNat (p, p0, ps, n),
+     TT.Ty (TT.Apply (p, n))
+
   | Syntax.Nat ->
      TT.Nat,
      TT.ty_Type
@@ -122,7 +137,8 @@ and check ctx ({Location.data=e'; loc} as e) ty =
   | Syntax.Type
   | Syntax.Nat
   | Syntax.Zero
-  | Syntax.Succ _ (*TODO*)
+  | Syntax.Succ _
+  | Syntax.IndNat _
   | Syntax.Ascribe _ ->
      let e, ty' = infer ctx e in
      if Equal.ty ctx ty ty'
