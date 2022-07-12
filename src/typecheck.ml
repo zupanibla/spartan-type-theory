@@ -90,9 +90,9 @@ let rec infer ctx {Location.data=e'; loc} =
      TT.Zero,
      TT.ty_Nat
 
-  | Syntax.Succ ->
-     TT.Succ,
-     TT.Ty (  TT.Prod ( (Name.anonymous(), TT.ty_Nat), TT.ty_Nat )  )
+  | Syntax.Succ e1 ->
+     TT.Succ (check ctx e1 TT.ty_Nat),
+     TT.ty_Nat
 
   | Syntax.Ascribe (e, t) ->
      let t = check_ty ctx t in
@@ -122,7 +122,7 @@ and check ctx ({Location.data=e'; loc} as e) ty =
   | Syntax.Type
   | Syntax.Nat
   | Syntax.Zero
-  | Syntax.Succ
+  | Syntax.Succ _ (*TODO*)
   | Syntax.Ascribe _ ->
      let e, ty' = infer ctx e in
      if Equal.ty ctx ty ty'

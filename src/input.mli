@@ -11,7 +11,7 @@ and expr' =
   | Arrow of expr * expr
   | Nat
   | Zero
-  | Succ
+  | Succ of expr
   | Numeral of int
   | Ascribe of expr * ty
 
