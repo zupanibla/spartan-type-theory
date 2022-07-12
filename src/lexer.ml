@@ -12,6 +12,7 @@ let reserved = [
   ("N", Parser.NAT) ;
   ("zero", Parser.ZERO) ;
   ("succ", Parser.SUCC) ;
+  ("ind", Parser.IND) ;
   ("forall", Parser.PROD) ;
   ("∀", Parser.PROD) ;
   ("Π", Parser.PROD) ;

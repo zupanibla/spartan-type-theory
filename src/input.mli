@@ -13,6 +13,7 @@ and expr' =
   | Zero
   | Succ of expr
   | Numeral of int
+  | IndNat of expr * expr * expr * expr
   | Ascribe of expr * ty
 
 (** Parsed type (equal to expression). *)

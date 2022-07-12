@@ -18,6 +18,7 @@ type expr =
   | Nat (** the type of natural numbers *)
   | Zero (** the natural number zero *)
   | Succ of expr (** successor of a natural number *)
+  | IndNat of expr * expr * expr * expr (** induction on natural numbers *)
 
 (** Type *)
 and ty = Ty of expr
@@ -66,6 +67,12 @@ let rec instantiate ?(lvl=0) e e' =
   | Nat     -> e'
   | Zero    -> e'
   | Succ e1 -> Succ (instantiate ~lvl e e1)
+  | IndNat (e1, e2, e3, e4) ->
+     let e1 = instantiate ~lvl e e1
+     and e2 = instantiate ~lvl e e2
+     and e3 = instantiate ~lvl e e3
+     and e4 = instantiate ~lvl e e4 in
+     IndNat (e1, e2, e3, e4)
 
 
 (** [instantiate k e t] instantiates deBruijn index [k] with [e] in type [t]. *)
@@ -100,7 +107,13 @@ let rec abstract ?(lvl=0) x e =
 
   | Nat     -> e
   | Zero    -> e
-  | Succ e1 -> e
+  | Succ e1 -> Succ (abstract ~lvl x e1)
+  | IndNat (e1, e2, e3, e4) ->
+     let e1 = abstract ~lvl x e1
+     and e2 = abstract ~lvl x e2
+     and e3 = abstract ~lvl x e3
+     and e4 = abstract ~lvl x e4 in
+     IndNat (e1, e2, e3, e4)
 
 (** [abstract_ty ~lvl x t] abstracts atom [x] into bound index [lvl] in type [t]. *)
 and abstract_ty ?(lvl=0) x (Ty t) =
@@ -124,7 +137,7 @@ let rec occurs k = function
   | Nat     -> false
   | Zero    -> false
   | Succ e1 -> occurs k e1
-
+  | IndNat (e1, e2, e3, e4) -> occurs k e1 || occurs k e2 || occurs k e3 || occurs k e4
 
 (** [occurs_ty k t] returns [true] when de Bruijn index [k] occurs in type [t]. *)
 and occurs_ty k (Ty t) = occurs k t
@@ -176,6 +189,8 @@ and print_expr' ~penv ?max_level e ppf =
       | Nat     -> Format.fprintf ppf "N"
       | Zero    -> Format.fprintf ppf "zero"
       | Succ e1 -> Print.print ppf "succ(%t)" (print_expr ?max_level ~penv e1)
+      | IndNat (e1, e2, e3, e4) -> Print.print ppf "ind(%t, %t, %t, %t)" (print_expr ?max_level ~penv e1)
+           (print_expr ?max_level ~penv e2) (print_expr ?max_level ~penv e3) (print_expr ?max_level ~penv e4)
 
 and print_ty ?max_level ~penv (Ty t) ppf = print_expr ?max_level ~penv t ppf
 
