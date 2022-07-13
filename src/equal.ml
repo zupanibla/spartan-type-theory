@@ -50,7 +50,7 @@ let rec norm_expr ~strategy ctx e =
 
   | TT.Nat    -> e
   | TT.Zero   -> e
-  | TT.Succ _ -> e
+  | TT.Succ n -> TT.Succ (norm_expr ~strategy ctx n)
   | TT.IndNat (p, p0, ps, n) ->
      let n = norm_expr ~strategy ctx n in
      begin
