@@ -18,6 +18,8 @@ type expr =
   | Zero (** the natural number zero *)
   | Succ of expr (** successor of a natural number *)
   | IndNat of expr * expr * expr * expr (** induction on natural numbers *)
+  | Empty (** the empty type **)
+  | IndEmpty of expr * expr (** induction on the empty type **)
 
 (** Type *)
 and ty = Ty of expr

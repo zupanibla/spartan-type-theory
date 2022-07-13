@@ -15,6 +15,8 @@ and expr' =
   | Numeral of int
   | IndNat of expr * expr * expr * expr
   | Ascribe of expr * ty
+  | Empty
+  | IndEmpty of expr * expr
 
 (** Parsed type (equal to expression). *)
 and ty = expr

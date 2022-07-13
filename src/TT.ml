@@ -19,6 +19,8 @@ type expr =
   | Zero (** the natural number zero *)
   | Succ of expr (** successor of a natural number *)
   | IndNat of expr * expr * expr * expr (** induction on natural numbers *)
+  | Empty (** the empty type **)
+  | IndEmpty of expr * expr (** induction on the empty type **)
 
 (** Type *)
 and ty = Ty of expr
@@ -74,6 +76,9 @@ let rec instantiate ?(lvl=0) e e' =
      and e4 = instantiate ~lvl e e4 in
      IndNat (e1, e2, e3, e4)
 
+  | Empty -> e'
+  | IndEmpty (e1, e2) -> IndEmpty (instantiate ~lvl e e1, instantiate ~lvl e e2)
+
 
 (** [instantiate k e t] instantiates deBruijn index [k] with [e] in type [t]. *)
 and instantiate_ty ?(lvl=0) e (Ty t) =
@@ -115,6 +120,9 @@ let rec abstract ?(lvl=0) x e =
      and e4 = abstract ~lvl x e4 in
      IndNat (e1, e2, e3, e4)
 
+  | Empty -> e
+  | IndEmpty (e1, e2) -> IndEmpty (abstract ~lvl x e1, abstract ~lvl x e2)
+
 (** [abstract_ty ~lvl x t] abstracts atom [x] into bound index [lvl] in type [t]. *)
 and abstract_ty ?(lvl=0) x (Ty t) =
   let t = abstract ~lvl x t in
@@ -138,6 +146,8 @@ let rec occurs k = function
   | Zero    -> false
   | Succ e1 -> occurs k e1
   | IndNat (e1, e2, e3, e4) -> occurs k e1 || occurs k e2 || occurs k e3 || occurs k e4
+  | Empty -> false
+  | IndEmpty (e1, e2) -> occurs k e1 || occurs k e2
 
 (** [occurs_ty k t] returns [true] when de Bruijn index [k] occurs in type [t]. *)
 and occurs_ty k (Ty t) = occurs k t
@@ -189,11 +199,15 @@ and print_expr' ~penv ?max_level e ppf =
 
       | Nat     -> Format.fprintf ppf "N"
       | Zero    -> Format.fprintf ppf "0"
-      
       | Succ e1 -> print_succ ?max_level ~penv e 0 ppf
 
-      | IndNat (e1, e2, e3, e4) -> Print.print ppf "ind(%t, %t, %t, %t)" (print_expr ?max_level ~penv e1)
-           (print_expr ?max_level ~penv e2) (print_expr ?max_level ~penv e3) (print_expr ?max_level ~penv e4)
+      | IndNat (e1, e2, e3, e4) -> Print.print ppf "ind(%t, %t, %t, %t)"
+         (print_expr ?max_level ~penv e1) (print_expr ?max_level ~penv e2)
+         (print_expr ?max_level ~penv e3) (print_expr ?max_level ~penv e4)
+
+      | Empty -> Format.fprintf ppf "Empty"
+      | IndEmpty (e1, e2) -> Print.print ppf "ind_empty(%t, %t)"
+         (print_expr ?max_level ~penv e1) (print_expr ?max_level ~penv e2)
 
 and print_ty ?max_level ~penv (Ty t) ppf = print_expr ?max_level ~penv t ppf
 

@@ -15,6 +15,8 @@ and expr' =
   | Zero
   | Succ of expr
   | IndNat of expr * expr * expr * expr
+  | Empty
+  | IndEmpty of expr * expr
   | Ascribe of expr * ty
 
 (** Types (equal to expressions at this point). *)
@@ -64,6 +66,12 @@ and shift' n k = function
      and e3 = shift n k e3
      and e4 = shift n k e4 in
      IndNat (e1, e2, e3, e4)
+
+  | Empty -> Empty
+  | IndEmpty (e1, e2) ->
+     let e1 = shift n k e1
+     and e2 = shift n k e2 in
+     IndEmpty (e1, e2)
 
   | Ascribe (e, t) ->
      let e = shift n k e

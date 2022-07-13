@@ -109,6 +109,16 @@ let rec infer ctx {Location.data=e'; loc} =
      TT.Succ (check ctx e1 TT.ty_Nat),
      TT.ty_Nat
 
+  | Syntax.Empty ->
+     TT.Empty,
+     TT.ty_Type
+
+  | Syntax.IndEmpty (p, e) ->
+     let p  = check ctx p  (TT.Ty (TT.Prod ((Name.anonymous (), TT.Ty (TT.Empty)), TT.ty_Type)))
+     and e  = check ctx e (TT.Ty (TT.Empty)) in
+     TT.IndEmpty (p, e),
+     TT.Ty (TT.Apply (p, e))
+
   | Syntax.Ascribe (e, t) ->
      let t = check_ty ctx t in
      let e = check ctx e t in
@@ -139,6 +149,8 @@ and check ctx ({Location.data=e'; loc} as e) ty =
   | Syntax.Zero
   | Syntax.Succ _
   | Syntax.IndNat _
+  | Syntax.Empty
+  | Syntax.IndEmpty _
   | Syntax.Ascribe _ ->
      let e, ty' = infer ctx e in
      if Equal.ty ctx ty ty'

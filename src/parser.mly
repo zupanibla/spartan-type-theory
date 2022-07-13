@@ -23,6 +23,8 @@
 %token SUCC
 %token <int> NUMERAL
 %token IND
+%token EMPTY
+%token IND_EMPTY
 
 (* Toplevel commands *)
 
@@ -77,7 +79,6 @@ plain_term:
   | e1=infix_term ARROW e2=term                 { Input.Arrow (e1, e2) }
   | LAMBDA a=lambda_abstraction DARROW e=term   { Input.Lambda (a, e) }
   | e=infix_term COLON t=term                   { Input.Ascribe (e, t) }
-  | IND LPAREN e1=term COMMA e2=term COMMA e3=term COMMA e4=term RPAREN { Input.IndNat (e1, e2, e3, e4) }
 
 infix_term: mark_location(plain_infix_term) { $1 }
 plain_infix_term:
@@ -103,6 +104,9 @@ plain_prefix_term:
       Input.Apply (op, e2)
     }
   | SUCC LPAREN e=term RPAREN                   { Input.Succ e }
+  | IND_EMPTY LPAREN e1=term COMMA e2=term RPAREN   { Input.IndEmpty (e1, e2) }
+  | IND LPAREN e1=term COMMA e2=term COMMA e3=term COMMA e4=term RPAREN
+     { Input.IndNat (e1, e2, e3, e4) }
 
 (* simple_term : mark_location(plain_simple_term) { $1 } *)
 plain_simple_term:
@@ -110,6 +114,7 @@ plain_simple_term:
   | TYPE                               { Input.Type }
   | NAT                                { Input.Nat }
   | ZERO                               { Input.Zero }
+  | EMPTY                              { Input.Empty }
   | NUMERAL                            { Input.Numeral $1 }
   | x=var_name                         { Input.Var x }
 

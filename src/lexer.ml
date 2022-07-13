@@ -13,7 +13,9 @@ let reserved = [
   ("zero", Parser.ZERO) ;
   ("succ", Parser.SUCC) ;
   ("ind", Parser.IND) ;
-  ("forall", Parser.PROD) ;
+  ("zero", Parser.ZERO) ;
+  ("Empty", Parser.EMPTY) ;
+  ("ind_empty", Parser.IND_EMPTY) ;
   ("∀", Parser.PROD) ;
   ("Π", Parser.PROD) ;
   ("∏", Parser.PROD) ;

@@ -53,15 +53,23 @@ let rec norm_expr ~strategy ctx e =
   | TT.Succ _ -> e
   | TT.IndNat (p, p0, ps, n) ->
      let n = norm_expr ~strategy ctx n in
-     match n with
-     | TT.Zero   -> norm_expr ~strategy ctx p0
-     | TT.Succ m -> norm_expr ~strategy ctx (TT.Apply (TT.Apply (ps, m), TT.IndNat (p, p0, ps, m)))
-     | _ -> TT.IndNat (
-        norm_expr ~strategy ctx p,
-        norm_expr ~strategy ctx p0,
-        norm_expr ~strategy ctx ps,
-        norm_expr ~strategy ctx n
-     )
+     begin
+       match n with
+       | TT.Zero   -> norm_expr ~strategy ctx p0
+       | TT.Succ m -> norm_expr ~strategy ctx (TT.Apply (TT.Apply (ps, m), TT.IndNat (p, p0, ps, m)))
+       | _ -> TT.IndNat (
+           norm_expr ~strategy ctx p,
+           norm_expr ~strategy ctx p0,
+           norm_expr ~strategy ctx ps,
+           norm_expr ~strategy ctx n
+         )
+     end
+
+  | TT.Empty -> e
+  | TT.IndEmpty (p, e) -> TT.IndEmpty (
+     norm_expr ~strategy ctx p,
+     norm_expr ~strategy ctx e
+  )
 
 (** Normalize a type *)
 and norm_ty ~strategy ctx (TT.Ty ty) =
@@ -100,7 +108,9 @@ let rec expr ctx e1 e2 ty =
     | TT.Nat
     | TT.Zero
     | TT.Succ _ 
-    | TT.IndNat _ ->
+    | TT.IndNat _
+    | TT.Empty
+    | TT.IndEmpty _ ->
       (* Type-directed phase is done, we compare normal forms. *)
       let e1 = norm_expr ~strategy:WHNF ctx e1
       and e2 = norm_expr ~strategy:WHNF ctx e2 in
@@ -163,8 +173,13 @@ and expr_whnf ctx e1 e2 =
      expr_whnf ctx a3 b3 &&
      expr_whnf ctx a4 b4
 
+  | TT.Empty, TT.Empty -> true
+  | TT.IndEmpty (a1, a2), TT.IndEmpty (b1, b2) ->
+     expr_whnf ctx a1 b1 &&
+     expr_whnf ctx a2 b2
+
   | (TT.Type | TT.Bound _ | TT.Atom _ | TT.Prod _ | TT.Lambda _ | TT.Apply _ | 
-     TT.Nat | TT.Zero | TT.Succ _ | TT.IndNat _), _ ->
+     TT.Nat | TT.Zero | TT.Succ _ | TT.IndNat _ | TT.Empty | TT.IndEmpty _), _ ->
     false
 
 (** Compare two types. *)

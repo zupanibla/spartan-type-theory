@@ -90,6 +90,10 @@ let rec expr ctx {Location.data=e; Location.loc=loc} =
     | Input.IndNat (e1, e2, e3, e4) -> Location.locate ~loc
          (Syntax.IndNat ((expr ctx e1), (expr ctx e2), (expr ctx e3), (expr ctx e4)))
 
+    | Input.Empty -> Location.locate ~loc Syntax.Empty
+    | Input.IndEmpty (e1, e2) ->
+       Location.locate ~loc (Syntax.IndEmpty (expr ctx e1, expr ctx e2))
+
     | Input.Ascribe (e, t) ->
        let e = expr ctx e
        and t = ty ctx t in
