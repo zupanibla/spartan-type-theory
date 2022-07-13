@@ -170,6 +170,7 @@ let print_debruijn xs k ppf =
 let rec print_expr ?max_level ~penv e ppf =
     print_expr' ~penv ?max_level e ppf
 
+
 and print_expr' ~penv ?max_level e ppf =
     match e with
       | Type ->
@@ -187,8 +188,10 @@ and print_expr' ~penv ?max_level e ppf =
       | Prod ((x, u), t) -> print_prod ?max_level ~penv ((x, u), t) ppf
 
       | Nat     -> Format.fprintf ppf "N"
-      | Zero    -> Format.fprintf ppf "zero"
-      | Succ e1 -> Print.print ppf "succ(%t)" (print_expr ?max_level ~penv e1)
+      | Zero    -> Format.fprintf ppf "0"
+      
+      | Succ e1 -> print_succ ?max_level ~penv e 0 ppf
+
       | IndNat (e1, e2, e3, e4) -> Print.print ppf "ind(%t, %t, %t, %t)" (print_expr ?max_level ~penv e1)
            (print_expr ?max_level ~penv e2) (print_expr ?max_level ~penv e3) (print_expr ?max_level ~penv e4)
 
@@ -291,3 +294,9 @@ and print_prod ?max_level ~penv ((x, u), t) ppf =
                                (print_ty ~max_level:Level.ascription)
                                (fun ~penv -> print_ty ~max_level:Level.in_binder ~penv t)
                                xus)
+
+and print_succ ?max_level ~penv e depth ppf =
+  match e with
+    | Zero    -> Print.print ppf "%d" depth
+    | Succ e1 -> print_succ ?max_level ~penv e1 (depth+1) ppf
+    | e1      -> Print.print ppf "succ%s(%t)" (if (depth == 1) then "" else string_of_int(depth)) (print_expr ?max_level ~penv e1)
