@@ -1,0 +1,1 @@
+Eval forall (b: N), (fun (_: N) => N) b.

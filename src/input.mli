@@ -17,6 +17,7 @@ and expr' =
   | Ascribe of expr * ty
   | Empty
   | IndEmpty of expr * expr
+  | Cartesian of ty * ty
 
 (** Parsed type (equal to expression). *)
 and ty = expr

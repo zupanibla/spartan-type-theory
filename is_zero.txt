@@ -1,0 +1,10 @@
+(* is_zero *)
+Definition p  := fun (n: N) => N.
+Definition p0 := 1.
+Definition ps := fun (n: N) => fun (m: N) => succ(succ(m).
+Definition n := 0.
+
+Check ind(p, p0, ps, n).
+Eval ind(p, p0, ps, 0).
+Eval ind(p, p0, ps, 1).
+Eval ind(p, p0, ps, 2).

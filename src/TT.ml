@@ -20,7 +20,8 @@ type expr =
   | Succ of expr (** successor of a natural number *)
   | IndNat of expr * expr * expr * expr (** induction on natural numbers *)
   | Empty (** the empty type **)
-  | IndEmpty of expr * expr (** induction on the empty type **)
+  | IndEmpty of expr * expr (** induction on the empty type *)
+  | PairType of ty * expr (** the dependent pair type *)
 
 (** Type *)
 and ty = Ty of expr
@@ -79,6 +80,11 @@ let rec instantiate ?(lvl=0) e e' =
   | Empty -> e'
   | IndEmpty (e1, e2) -> IndEmpty (instantiate ~lvl e e1, instantiate ~lvl e e2)
 
+  | PairType (t, p) ->
+     let t = instantiate_ty ~lvl e t
+     and p = instantiate ~lvl e p in
+     PairType (t, p)
+
 
 (** [instantiate k e t] instantiates deBruijn index [k] with [e] in type [t]. *)
 and instantiate_ty ?(lvl=0) e (Ty t) =
@@ -123,6 +129,11 @@ let rec abstract ?(lvl=0) x e =
   | Empty -> e
   | IndEmpty (e1, e2) -> IndEmpty (abstract ~lvl x e1, abstract ~lvl x e2)
 
+  | PairType (t, p) ->
+     let t = abstract_ty ~lvl x t
+     and u = abstract ~lvl x p in
+     PairType (t, u)
+
 (** [abstract_ty ~lvl x t] abstracts atom [x] into bound index [lvl] in type [t]. *)
 and abstract_ty ?(lvl=0) x (Ty t) =
   let t = abstract ~lvl x t in
@@ -148,6 +159,7 @@ let rec occurs k = function
   | IndNat (e1, e2, e3, e4) -> occurs k e1 || occurs k e2 || occurs k e3 || occurs k e4
   | Empty -> false
   | IndEmpty (e1, e2) -> occurs k e1 || occurs k e2
+  | PairType (t, p) -> occurs_ty k t || occurs k p
 
 (** [occurs_ty k t] returns [true] when de Bruijn index [k] occurs in type [t]. *)
 and occurs_ty k (Ty t) = occurs k t
@@ -208,6 +220,8 @@ and print_expr' ~penv ?max_level e ppf =
       | Empty -> Format.fprintf ppf "Empty"
       | IndEmpty (e1, e2) -> Print.print ppf "ind_empty(%t, %t)"
          (print_expr ?max_level ~penv e1) (print_expr ?max_level ~penv e2)
+
+      | PairType (p, t) -> Print.print ppf "PairType_TODO"
 
 and print_ty ?max_level ~penv (Ty t) ppf = print_expr ?max_level ~penv t ppf
 

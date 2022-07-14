@@ -20,6 +20,7 @@ type expr =
   | IndNat of expr * expr * expr * expr (** induction on natural numbers *)
   | Empty (** the empty type **)
   | IndEmpty of expr * expr (** induction on the empty type **)
+  | PairType of ty * expr (** the dependent pair type *)
 
 (** Type *)
 and ty = Ty of expr

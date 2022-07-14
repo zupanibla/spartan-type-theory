@@ -1,0 +1,16 @@
+Definition succ_fun := fun (n: N) => succ(n).
+
+Definition add := fun (a: N) => fun (b: N) => ind(
+	fun (n: N) => N,
+	a,
+	fun (n: N) => fun (m: N) => succ_fun(m),
+	b
+).
+
+Check add.
+
+Eval add.
+
+Eval add 3 5.
+
+Eval forall (b: N), (fun (_: N) => N) b.

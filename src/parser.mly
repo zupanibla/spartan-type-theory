@@ -25,6 +25,7 @@
 %token IND
 %token EMPTY
 %token IND_EMPTY
+%token CARTESIAN
 
 (* Toplevel commands *)
 
@@ -89,6 +90,7 @@ plain_infix_term:
       let e1 = Location.locate ~loc (Input.Apply (op, e2)) in
       Input.Apply (e1, e3)
     }
+  | t=term CARTESIAN p=term                     { Input.Cartesian (t, p) }  (*TODO*)
 
 app_term: mark_location(plain_app_term) { $1 }
 plain_app_term:

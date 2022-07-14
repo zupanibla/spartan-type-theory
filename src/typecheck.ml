@@ -124,6 +124,13 @@ let rec infer ctx {Location.data=e'; loc} =
      let e = check ctx e t in
      e, t
 
+   | Syntax.PairType (t, p) ->
+     let t  = check_ty ctx t in
+     let p  = check ctx p (TT.Ty (TT.Prod ((Name.anonymous (), t), TT.ty_Type))) in
+     TT.PairType (t, p),
+     TT.ty_Type
+
+
 (** [check ctx e ty] checks that [e] has type [ty] in context [ctx].
     It returns the processed expression [e]. *)
 and check ctx ({Location.data=e'; loc} as e) ty =
@@ -151,7 +158,9 @@ and check ctx ({Location.data=e'; loc} as e) ty =
   | Syntax.IndNat _
   | Syntax.Empty
   | Syntax.IndEmpty _
-  | Syntax.Ascribe _ ->
+  | Syntax.Ascribe _
+  | Syntax.PairType _
+  ->
      let e, ty' = infer ctx e in
      if Equal.ty ctx ty ty'
      then

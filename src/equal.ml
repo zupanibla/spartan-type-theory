@@ -71,6 +71,11 @@ let rec norm_expr ~strategy ctx e =
      norm_expr ~strategy ctx e
   )
 
+  | TT.PairType (t, p) ->
+    let t = norm_ty ~strategy ctx t
+    and p = norm_expr ~strategy ctx p in
+    TT.PairType (t, p)
+
 (** Normalize a type *)
 and norm_ty ~strategy ctx (TT.Ty ty) =
   let ty = norm_expr ~strategy ctx ty in
@@ -110,7 +115,9 @@ let rec expr ctx e1 e2 ty =
     | TT.Succ _ 
     | TT.IndNat _
     | TT.Empty
-    | TT.IndEmpty _ ->
+    | TT.IndEmpty _
+    | TT.PairType _
+    ->
       (* Type-directed phase is done, we compare normal forms. *)
       let e1 = norm_expr ~strategy:WHNF ctx e1
       and e2 = norm_expr ~strategy:WHNF ctx e2 in
@@ -178,8 +185,12 @@ and expr_whnf ctx e1 e2 =
      expr_whnf ctx a1 b1 &&
      expr_whnf ctx a2 b2
 
+  | TT.PairType (t1, p1), TT.PairType (t2, p2)  ->
+     ty ctx t1 t2 &&
+     expr_whnf ctx p1 p2
+
   | (TT.Type | TT.Bound _ | TT.Atom _ | TT.Prod _ | TT.Lambda _ | TT.Apply _ | 
-     TT.Nat | TT.Zero | TT.Succ _ | TT.IndNat _ | TT.Empty | TT.IndEmpty _), _ ->
+     TT.Nat | TT.Zero | TT.Succ _ | TT.IndNat _ | TT.Empty | TT.IndEmpty _ | TT.PairType _), _ ->
     false
 
 (** Compare two types. *)

@@ -99,6 +99,12 @@ let rec expr ctx {Location.data=e; Location.loc=loc} =
        and t = ty ctx t in
        Location.locate ~loc (Syntax.Ascribe (e, t))
 
+    | Input.Cartesian (t1, t2) ->
+       let t1 = ty ctx t1
+       and t2 = ty ctx t2 in
+       Location.locate ~loc (Syntax.PairType (t1, 
+          Location.locate ~loc (Syntax.Lambda ((Name.anonymous (), Some t1), t2))
+       ))
 
 (** Desugar a type, which at this stage is the same as an expressions. *)
 and ty ctx t = expr ctx t
