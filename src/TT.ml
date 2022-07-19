@@ -80,7 +80,7 @@ let rec instantiate ?(lvl=0) e e' =
   | IndEmpty (e1, e2) -> IndEmpty (instantiate ~lvl e e1, instantiate ~lvl e e2)
 
 
-(** [instantiate k e t] instantiates deBruijn index [k] with [e] in type [t]. *)
+(** [instantiate ~lvl:k e t] instantiates deBruijn index [k] with [e] in type [t]. *)
 and instantiate_ty ?(lvl=0) e (Ty t) =
   let t = instantiate ~lvl e t in
   Ty t

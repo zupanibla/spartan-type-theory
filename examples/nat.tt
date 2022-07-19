@@ -1,0 +1,9 @@
+Definition plus :=
+  fun (a : N) =>
+  fun (b : N) => 
+  ind(
+    fun (n : N) => N,
+    a,
+    fun (k : N) => fun (r : N) => succ(r),
+    b
+  ).

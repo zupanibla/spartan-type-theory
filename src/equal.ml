@@ -1,14 +1,21 @@
 (** Equality and normalization. *)
 
 (** A normalization strategy. *)
-type strategy =
+type liveliness =
   | WHNF (** normalize to weak head-normal form *)
   | CBV (** call-by-value normalization *)
 
+type depth =
+  | DEEP (** normalize inside abstractions *)
+  | SHALLOW (** do not normalize inside abstractions *)
+
+type strategy = liveliness * depth
+
 (** Normalize an expression. *)
 let rec norm_expr ~strategy ctx e =
+  let (liveliness, depth) = strategy in
   match e with
-  | TT.Bound k -> e
+  | TT.Bound k -> assert false
 
   | TT.Type -> e
 
@@ -20,22 +27,32 @@ let rec norm_expr ~strategy ctx e =
     end
 
   | TT.Prod ((ident, t1), t2) ->
-    let t1 = norm_ty ~strategy ctx t1
-    and t2 = norm_ty ~strategy ctx t2 in
-    TT.Prod ((ident, t1), t2)
-
-  | TT.Lambda (param, body) ->
     begin
-    match strategy with
-      | WHNF -> e
-      | CBV -> TT.Lambda (param, norm_expr ~strategy ctx body)
+      match depth with
+      | SHALLOW -> e
+      | DEEP ->
+         let t1 = norm_ty ~strategy ctx t1 in
+         let x = TT.new_atom ident in
+         let t2 = TT.abstract_ty x (norm_ty ~strategy ctx (TT.unabstract_ty x t2)) in
+         TT.Prod ((ident, t1), t2)
+    end
+
+  | TT.Lambda ((ident, t), body) ->
+    begin
+      match depth with
+      | SHALLOW -> e
+      | DEEP ->
+         let t = norm_ty ~strategy ctx t in
+         let x = TT.new_atom ident in
+         let body = TT.abstract x (norm_expr ~strategy ctx (TT.unabstract x body)) in
+         TT.Lambda ((ident, t), norm_expr ~strategy ctx body)
     end
 
   | TT.Apply (e1, e2) ->
     let e1 = norm_expr ~strategy ctx e1
     and e2 =
       begin
-        match strategy with
+        match liveliness with
         | WHNF -> e2
         | CBV -> norm_expr ~strategy ctx e2
       end
@@ -78,7 +95,7 @@ and norm_ty ~strategy ctx (TT.Ty ty) =
 
 (** Normalize a type to a product. *)
 let as_prod ctx t =
-  let TT.Ty t' = norm_ty ~strategy:WHNF ctx t in
+  let TT.Ty t' = norm_ty ~strategy:(WHNF, SHALLOW) ctx t in
   match t' with
   | TT.Prod ((x, t), u) -> Some ((x, t), u)
   | _ -> None
@@ -89,7 +106,7 @@ let rec expr ctx e1 e2 ty =
   (e1 == e2) ||
   begin
     (* The type directed phase *)
-    let TT.Ty ty' = norm_ty ~strategy:WHNF ctx ty in
+    let TT.Ty ty' = norm_ty ~strategy:(WHNF, SHALLOW) ctx ty in
     match  ty' with
 
     | TT.Prod ((x, t), u) ->
@@ -107,13 +124,13 @@ let rec expr ctx e1 e2 ty =
     | TT.Atom _
     | TT.Nat
     | TT.Zero
-    | TT.Succ _ 
+    | TT.Succ _
     | TT.IndNat _
     | TT.Empty
     | TT.IndEmpty _ ->
       (* Type-directed phase is done, we compare normal forms. *)
-      let e1 = norm_expr ~strategy:WHNF ctx e1
-      and e2 = norm_expr ~strategy:WHNF ctx e2 in
+      let e1 = norm_expr ~strategy:(WHNF, SHALLOW) ctx e1
+      and e2 = norm_expr ~strategy:(WHNF, SHALLOW) ctx e2 in
       expr_whnf ctx e1 e2
 
     | TT.Lambda _ ->
@@ -178,7 +195,7 @@ and expr_whnf ctx e1 e2 =
      expr_whnf ctx a1 b1 &&
      expr_whnf ctx a2 b2
 
-  | (TT.Type | TT.Bound _ | TT.Atom _ | TT.Prod _ | TT.Lambda _ | TT.Apply _ | 
+  | (TT.Type | TT.Bound _ | TT.Atom _ | TT.Prod _ | TT.Lambda _ | TT.Apply _ |
      TT.Nat | TT.Zero | TT.Succ _ | TT.IndNat _ | TT.Empty | TT.IndEmpty _), _ ->
     false
 
