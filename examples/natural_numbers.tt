@@ -1,0 +1,78 @@
+Definition ( + ) := λ (a b: N) => ind(
+	λ (n: N) => N,
+	a,
+	λ (n m: N) => succ m,
+	b
+).
+
+Definition ( * ) := λ (a b: N) => ind(
+	λ (n: N) => N,
+	0,
+	λ (n m: N) => m + a,
+	b
+).
+
+Definition ( ** ) := λ (a b: N) => ind(
+	λ (n: N) => N,
+	1,
+	λ (n m: N) => m * a,
+	b
+).
+
+Definition pred := λ (a: N) => ind(
+	λ (n: N) => N,
+	0,
+	λ (n m: N) => n,
+	a
+).
+
+Definition ( - ) := λ (a b: N) => ind(
+	λ (n: N) => N,
+	a,
+	λ (n m: N) => pred m,
+	b
+).
+
+Definition is_zero := λ (a: N) => ind(
+	λ (n: N) => N,
+	1,
+	λ (n m: N) => 0,
+	a
+).
+
+Definition if_then_else := λ (a b c: N) => ind(
+	λ (n: N) => N,
+	c,
+	λ (n m: N) => b,
+	a
+).
+
+Definition ( & ) := ( * ).
+Definition ( | ) := ( + ).
+Definition ( ! ) := is_zero.
+
+Definition ( > ) := ( - ).
+Definition ( < ) := λ (a b: N) => b - a.
+
+Definition ( <= ) := λ (a b: N) => !(a > b).
+Definition ( >= ) := λ (a b: N) => !(a < b).
+
+Definition ( = ) := λ (a b: N) => (a <= b) & (a >= b).
+
+Definition ( / ) := λ (a b: N) => ind(
+	λ (n: N) => N,
+	0,
+	λ (n m: N) => if_then_else (n * b <= a) n m,
+	succ a
+).
+
+Definition ( % ) := λ (a b: N) => a - a / b * b.
+
+Definition divisor_count := λ (a: N) => ind(
+	λ (n: N) => N,
+	1,
+	λ (n m: N) => if_then_else (a % n) m (succ m),
+	a
+).
+
+Definition is_prime := λ (a: N) => 2 = divisor_count a.
