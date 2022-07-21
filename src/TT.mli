@@ -1,7 +1,7 @@
 (** {1 Spartan type theory} *)
 
 (** De Bruijn index *)
-type index
+type index = int
 
 (** An atom is a primitive symbol. *)
 type atom

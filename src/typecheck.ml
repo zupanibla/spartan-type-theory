@@ -85,11 +85,10 @@ let rec infer ctx {Location.data=e'; loc} =
   | Syntax.IndNat (p, p0, ps, n) ->
      let p  = check ctx p  (TT.Ty (TT.Prod ((Name.anonymous (), TT.ty_Nat), TT.ty_Type))) in
      let p0 = check ctx p0 (TT.Ty (TT.Apply (p, TT.Zero))) in
-     let m  = TT.new_atom (Name.anonymous ()) in
      let ps = check ctx ps (
-        TT.Ty (TT.Prod ((TT.atom_name m, TT.ty_Nat),
-           TT.Ty (TT.Prod ((Name.anonymous (), TT.Ty (TT.Apply (p, TT.Atom m))),
-              TT.Ty (TT.Apply (p, TT.Succ (TT.Atom m)))
+        TT.Ty (TT.Prod ((Name.anonymous (), TT.ty_Nat),
+           TT.Ty (TT.Prod ((Name.anonymous (), TT.Ty (TT.Apply (p, TT.Bound 0))),
+              TT.Ty (TT.Apply (p, TT.Succ (TT.Bound 1)))
            ))
         )
      )) in
