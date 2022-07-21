@@ -61,6 +61,10 @@ filecontents:
 
 commandline:
   | topcomp PERIOD EOF       { $1 }
+  | top_level_term           { $1 }
+
+top_level_term: mark_location(plain_level_top_term) { $1 }
+plain_level_top_term: e=term EOF { Input.TopEval e }
 
 (* Things that can be defined on toplevel. *)
 topcomp: mark_location(plain_topcomp) { $1 }
