@@ -313,4 +313,9 @@ and print_succ ?max_level ~penv e depth ppf =
   match e with
     | Zero    -> Print.print ppf "%d" depth
     | Succ e1 -> print_succ ?max_level ~penv e1 (depth+1) ppf
-    | e1      -> Print.print ppf "succ%s(%t)" (if (depth == 1) then "" else string_of_int(depth)) (print_expr ?max_level ~penv e1)
+    | e1      -> wrap_in_n_succs ?max_level ~penv e depth ppf
+
+and wrap_in_n_succs ?max_level ~penv e n ppf =
+  match n with
+    | 0 -> Print.print ppf "%t" (print_expr ?max_level ~penv e)
+    | n -> Print.print ppf "succ(%t)" (wrap_in_n_succs ?max_level ~penv e (n-1))
