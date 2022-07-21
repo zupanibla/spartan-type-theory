@@ -79,6 +79,10 @@ plain_term:
   | e1=infix_term ARROW e2=term                 { Input.Arrow (e1, e2) }
   | LAMBDA a=lambda_abstraction DARROW e=term   { Input.Lambda (a, e) }
   | e=infix_term COLON t=term                   { Input.Ascribe (e, t) }
+  | SUCC e=term                                 { Input.Succ e }
+  | IND_EMPTY LPAREN e1=term COMMA e2=term RPAREN   { Input.IndEmpty (e1, e2) }
+  | IND LPAREN e1=term COMMA e2=term COMMA e3=term COMMA e4=term RPAREN
+     { Input.IndNat (e1, e2, e3, e4) }
 
 infix_term: mark_location(plain_infix_term) { $1 }
 plain_infix_term:
@@ -103,10 +107,6 @@ plain_prefix_term:
       let op = Location.locate ~loc (Input.Var op) in
       Input.Apply (op, e2)
     }
-  | SUCC LPAREN e=term RPAREN                   { Input.Succ e }
-  | IND_EMPTY LPAREN e1=term COMMA e2=term RPAREN   { Input.IndEmpty (e1, e2) }
-  | IND LPAREN e1=term COMMA e2=term COMMA e3=term COMMA e4=term RPAREN
-     { Input.IndNat (e1, e2, e3, e4) }
 
 (* simple_term : mark_location(plain_simple_term) { $1 } *)
 plain_simple_term:
