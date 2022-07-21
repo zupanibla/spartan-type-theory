@@ -8,7 +8,7 @@ type strategy =
 (** Normalize an expression. *)
 let rec norm_expr ~strategy ctx e =
   match e with
-  | TT.Bound k -> e
+  | TT.Bound k -> assert false
 
   | TT.Type -> e
 
@@ -19,17 +19,9 @@ let rec norm_expr ~strategy ctx e =
       | Some e -> norm_expr ~strategy ctx e
     end
 
-  | TT.Prod ((ident, t1), t2) ->
-    let t1 = norm_ty ~strategy ctx t1
-    and t2 = norm_ty ~strategy ctx t2 in
-    TT.Prod ((ident, t1), t2)
+  | TT.Prod _ -> e
 
-  | TT.Lambda (param, body) ->
-    begin
-    match strategy with
-      | WHNF -> e
-      | CBV -> TT.Lambda (param, norm_expr ~strategy ctx body)
-    end
+  | TT.Lambda _ -> e
 
   | TT.Apply (e1, e2) ->
     let e1 = norm_expr ~strategy ctx e1
@@ -72,7 +64,7 @@ let rec norm_expr ~strategy ctx e =
   )
 
 (** Normalize a type *)
-and norm_ty ~strategy ctx (TT.Ty ty) =
+let norm_ty ~strategy ctx (TT.Ty ty) =
   let ty = norm_expr ~strategy ctx ty in
   TT.Ty ty
 
@@ -107,7 +99,7 @@ let rec expr ctx e1 e2 ty =
     | TT.Atom _
     | TT.Nat
     | TT.Zero
-    | TT.Succ _ 
+    | TT.Succ _
     | TT.IndNat _
     | TT.Empty
     | TT.IndEmpty _ ->
@@ -178,7 +170,7 @@ and expr_whnf ctx e1 e2 =
      expr_whnf ctx a1 b1 &&
      expr_whnf ctx a2 b2
 
-  | (TT.Type | TT.Bound _ | TT.Atom _ | TT.Prod _ | TT.Lambda _ | TT.Apply _ | 
+  | (TT.Type | TT.Bound _ | TT.Atom _ | TT.Prod _ | TT.Lambda _ | TT.Apply _ |
      TT.Nat | TT.Zero | TT.Succ _ | TT.IndNat _ | TT.Empty | TT.IndEmpty _), _ ->
     false
 
