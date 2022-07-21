@@ -36,7 +36,7 @@ let numeral = [%sedlex.regexp? Plus digit]
 let symbolchar = [%sedlex.regexp?  ('!' | '$' | '%' | '&' | '*' | '+' | '-' | '.' | '/' | ':' | '<' | '=' | '>' | '?' | '@' | '^' | '|' | '~')]
 
 let prefixop = [%sedlex.regexp? ('~' | '?' | '!'), Star symbolchar ]
-let infixop0 = [%sedlex.regexp? ('=' | '<' | '>' | '|' | '&' | '$'), Star symbolchar]
+let infixop0 = [%sedlex.regexp? ('=' | '<' | '>' | '|' | '&' | '$', "<=", ">="), Star symbolchar]
 let infixop1 = [%sedlex.regexp? ('@' | '^'), Star symbolchar ]
 let infixop2 = [%sedlex.regexp? ('+' | '-'), Star symbolchar ]
 let infixop3 = [%sedlex.regexp? ('*' | '/' | '%'), Star symbolchar ]
