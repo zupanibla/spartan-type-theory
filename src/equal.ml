@@ -43,8 +43,17 @@ let rec norm_expr ~strategy ctx e =
     end
 
   | TT.Nat    -> e
+
   | TT.Zero   -> e
-  | TT.Succ n -> TT.Succ (norm_expr ~strategy ctx n)
+
+  | TT.Pair (e1, e2) ->
+     let e1 = norm_expr ~strategy ctx e1
+     and e2 = norm_expr ~strategy ctx e2 in
+     TT.Pair (e1, r2)
+
+  | TT.Succ n ->
+     TT.Succ (norm_expr ~strategy ctx n)
+
   | TT.IndNat (p, p0, ps, n) ->
      let n = norm_expr ~strategy ctx n in
      begin
@@ -55,9 +64,19 @@ let rec norm_expr ~strategy ctx e =
            norm_expr ~strategy ctx p,
            norm_expr ~strategy ctx p0,
            norm_expr ~strategy ctx ps,
-           norm_expr ~strategy ctx n
+           n
          )
      end
+
+  | TT.Fst e ->
+    let e = norm_expr ~strategy ctx e in
+    begin
+      match e with
+      | TT.Pair (e1, e2) -> norm_expr ~stragegy ctx e1
+      | _ -> TT.Fst e
+    end
+
+  | TT.Snd e -> failwith "not implemented, but similar to Fst"
 
   | TT.Empty -> e
   | TT.IndEmpty (p, e) -> TT.IndEmpty (
@@ -75,6 +94,13 @@ let as_prod ctx t =
   let TT.Ty t' = norm_ty ~strategy:WHNF ctx t in
   match t' with
   | TT.Prod ((x, t), u) -> Some ((x, t), u)
+  | _ -> None
+
+(** Normalize a type to a product. *)
+let as_id ctx t =
+  let TT.Ty t' = norm_ty ~strategy:WHNF ctx t in
+  match t' with
+  | TT.Id (e1, e2) -> Some (e1, e2)
   | _ -> None
 
 (** Compare expressions [e1] and [e2] at type [ty]? *)
@@ -96,12 +122,8 @@ let rec expr ctx e1 e2 ty =
       expr ctx e1 e2 u
 
     | TT.Sum ((x, t), u) ->
-      let x' = TT.new_atom x in
-      let ctx = Context.extend_ident x' t ctx
-      and e1 = TT.Apply (e1, TT.Atom x')
-      and e2 = TT.Apply (e2, TT.Atom x')
-      and u = TT.unabstract_ty x' u in
-      expr ctx e1 e2 u
+       expr ctx (Fst e1) (Fst e2) t &&
+       expr ctx (Snd e1) (Snd e2) (TT.instantiate_ty (Fst e1) u)
 
     | TT.Type
     | TT.Apply _
@@ -184,6 +206,11 @@ and expr_whnf ctx e1 e2 =
      expr_whnf ctx a2 b2 &&
      expr_whnf ctx a3 b3 &&
      expr_whnf ctx a4 b4
+
+  | TT.Fst e1, TT.Fst e2 -> expr_whnf ctx e1 e2
+  | TT.Snd e1, TT.Snd e2 -> failwith "not implemented"
+  | TT.Pair (e11, e12), TT.Pair (e21, e22) -> failwith "not implemented"
+
 
   | TT.Empty, TT.Empty -> true
   | TT.IndEmpty (a1, a2), TT.IndEmpty (b1, b2) ->

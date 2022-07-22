@@ -21,6 +21,12 @@ type expr =
   | IndNat of expr * expr * expr * expr (** induction on natural numbers *)
   | Empty (** the empty type **)
   | IndEmpty of expr * expr (** induction on the empty type **)
+  | Fst of expr
+  | Snd of expr
+  | Pair of expr * expr
+  | Id of expr * expr
+  | Refl of expr
+  | J of expr * expr * expr (** path inducion J (B, p, q) *)
 
 (** Type *)
 and ty = Ty of expr
