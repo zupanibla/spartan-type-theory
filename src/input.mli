@@ -6,9 +6,11 @@ and expr' =
   | Var of Name.ident
   | Type
   | Prod of (Name.ident list * ty) list * ty
+  | Sum of (Name.ident list * ty) list * ty
   | Lambda of (Name.ident list * ty option) list * ty
   | Apply of expr * expr
   | Arrow of expr * expr
+  | Cartesian of expr * expr
   | Nat
   | Zero
   | Succ of expr

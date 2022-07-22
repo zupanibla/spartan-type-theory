@@ -58,6 +58,15 @@ let rec infer ctx {Location.data=e'; loc} =
      TT.Prod ((x, t), u),
      TT.ty_Type
 
+  | Syntax.Sum ((x, t), u) ->
+     let t = check_ty ctx t in
+     let x' = TT.new_atom x in
+     let ctx = Context.extend_ident x' t ctx in
+     let u = check_ty ctx u in
+     let u = TT.abstract_ty x' u in
+     TT.Sum ((x, t), u),
+     TT.ty_Type
+
   | Syntax.Lambda ((x, Some t), e) ->
      let t = check_ty ctx t in
      let x' = TT.new_atom x in
@@ -142,6 +151,7 @@ and check ctx ({Location.data=e'; loc} as e) ty =
   | Syntax.Lambda ((_, Some _), _)
   | Syntax.Apply _
   | Syntax.Prod _
+  | Syntax.Sum _
   | Syntax.Var _
   | Syntax.Type
   | Syntax.Nat

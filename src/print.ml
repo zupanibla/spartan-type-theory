@@ -36,8 +36,10 @@ let sequence print_u separator us ppf =
 
 let char_lambda () = if !Config.ascii then "lambda" else "λ"
 let char_arrow ()  = if !Config.ascii then "->" else "→"
+let char_cartesian ()  = if !Config.ascii then "X" else "×"
 let char_darrow () = if !Config.ascii then "=>" else "⇒"
 let char_prod ()   = if !Config.ascii then "forall" else "Π"
 let char_forall () = if !Config.ascii then "forall" else "∀"
+let char_sum ()    = if !Config.ascii then "exists" else "Σ"
 let char_equal ()  = if !Config.ascii then "==" else "≡"
 let char_vdash ()  = if !Config.ascii then "|-" else "⊢"

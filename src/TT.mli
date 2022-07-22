@@ -12,6 +12,7 @@ type expr =
   | Atom of atom (** primitive symbol *)
   | Type (** the type of types *)
   | Prod of (Name.ident * ty) * ty (** dependent product *)
+  | Sum of (Name.ident * ty) * ty (** dependent sum *)
   | Lambda of (Name.ident * ty) * expr (** lambda abstraction *)
   | Apply of expr * expr (** application *)
   | Nat (** the type of natural numbers *)

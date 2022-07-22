@@ -9,6 +9,7 @@ and expr' =
   | Var of index
   | Type
   | Prod of (Name.ident * ty) * ty
+  | Sum of (Name.ident * ty) * ty
   | Lambda of (Name.ident * ty option) * expr
   | Apply of expr * expr
   | Nat
@@ -46,6 +47,11 @@ and shift' n k = function
      let t = shift_ty n k t
      and u = shift_ty (n + 1) k u in
      Prod ((x, t), u)
+
+  | Sum ((x, t), u) ->
+     let t = shift_ty n k t
+     and u = shift_ty (n + 1) k u in
+     Sum ((x, t), u)
 
   | Lambda ((x, topt), e) ->
      let t = shift_tyopt n k topt

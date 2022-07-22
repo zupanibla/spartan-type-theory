@@ -54,7 +54,7 @@ let rec expr ctx {Location.data=e; Location.loc=loc} =
     | Input.Type -> Location.locate ~loc Syntax.Type
 
     | Input.Prod (a, u) ->
-       let ctx, xts = prod_abstraction ctx a in
+       let ctx, xts = prod_or_sum_abstraction ctx a in
        let u = ty ctx u in
        List.fold_right
          (fun (x, t) e -> Location.locate ~loc:t.Location.loc (Syntax.Prod ((x, t), e)))
@@ -66,6 +66,20 @@ let rec expr ctx {Location.data=e; Location.loc=loc} =
        let t2 = Syntax.shift_ty 0 1 t2 in
        let x = Name.anonymous () in
        Location.locate ~loc (Syntax.Prod ((x, t1), t2))
+
+    | Input.Sum (a, u) ->
+       let ctx, xts = prod_or_sum_abstraction ctx a in
+       let u = ty ctx u in
+       List.fold_right
+         (fun (x, t) e -> Location.locate ~loc:t.Location.loc (Syntax.Sum ((x, t), e)))
+         xts u
+
+    | Input.Cartesian (t1, t2) ->
+       let t1 = ty ctx t1
+       and t2 = ty ctx t2 in
+       let t2 = Syntax.shift_ty 0 1 t2 in
+       let x = Name.anonymous () in
+       Location.locate ~loc (Syntax.Sum ((x, t1), t2))
 
     | Input.Lambda (a, e) ->
        let ctx, lst = lambda_abstraction ctx a in
@@ -108,19 +122,19 @@ and tyopt ctx = function
   | None -> None
   | Some t -> Some (ty ctx t)
 
-(** Desugar a product abstraction. *)
-and prod_abstraction ctx a : context * (Name.ident * Syntax.ty) list =
+(** Desugar a product or sum abstraction. *)
+and prod_or_sum_abstraction ctx a : context * (Name.ident * Syntax.ty) list =
   let rec fold ctx = function
     | [] -> ctx, []
     | (xs, t) :: lst ->
-       let ctx, xts = prod_abstraction1 ctx xs t in
+       let ctx, xts = prod_or_sum_abstraction1 ctx xs t in
        let ctx, yts = fold ctx lst in
        ctx, xts @ yts
   in
   fold ctx a
 
-(** Auxiliary function used to desugar product abstractions. *)
-and prod_abstraction1 ctx xs t : context * (Name.ident * Syntax.ty) list =
+(** Auxiliary function used to desugar product and sum abstractions. *)
+and prod_or_sum_abstraction1 ctx xs t : context * (Name.ident * Syntax.ty) list =
   let rec fold ctx t lst = function
     | [] -> ctx, List.rev lst
     | x :: xs ->

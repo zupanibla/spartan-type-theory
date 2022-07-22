@@ -21,6 +21,8 @@ let rec norm_expr ~strategy ctx e =
 
   | TT.Prod _ -> e
 
+  | TT.Sum _ -> e
+
   | TT.Lambda _ -> e
 
   | TT.Apply (e1, e2) ->
@@ -93,6 +95,14 @@ let rec expr ctx e1 e2 ty =
       and u = TT.unabstract_ty x' u in
       expr ctx e1 e2 u
 
+    | TT.Sum ((x, t), u) ->
+      let x' = TT.new_atom x in
+      let ctx = Context.extend_ident x' t ctx
+      and e1 = TT.Apply (e1, TT.Atom x')
+      and e2 = TT.Apply (e2, TT.Atom x')
+      and u = TT.unabstract_ty x' u in
+      expr ctx e1 e2 u
+
     | TT.Type
     | TT.Apply _
     | TT.Bound _
@@ -136,6 +146,16 @@ and expr_whnf ctx e1 e2 =
       ty ctx u1 u2
     end
 
+  | TT.Sum ((x, t1), u1), TT.Sum ((_, t2), u2)  ->
+    ty ctx t1 t2 &&
+    begin
+      let x' = TT.new_atom x in
+      let ctx = Context.extend_ident x' t1 ctx
+      and u1 = TT.unabstract_ty x' u1
+      and u2 = TT.unabstract_ty x' u2 in
+      ty ctx u1 u2
+    end
+
   | TT.Lambda ((x, t1), e1), TT.Lambda ((_, t2), e2)  ->
     (* We should never have to compare two lambdas, as that would mean that the
        type-directed phase did not figure out that these have product types. *)
@@ -170,7 +190,7 @@ and expr_whnf ctx e1 e2 =
      expr_whnf ctx a1 b1 &&
      expr_whnf ctx a2 b2
 
-  | (TT.Type | TT.Bound _ | TT.Atom _ | TT.Prod _ | TT.Lambda _ | TT.Apply _ |
+  | (TT.Type | TT.Bound _ | TT.Atom _ | TT.Prod _ | TT.Sum _ | TT.Lambda _ | TT.Apply _ |
      TT.Nat | TT.Zero | TT.Succ _ | TT.IndNat _ | TT.Empty | TT.IndEmpty _), _ ->
     false
 

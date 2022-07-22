@@ -20,6 +20,9 @@ let reserved = [
   ("∀", Parser.PROD) ;
   ("Π", Parser.PROD) ;
   ("∏", Parser.PROD) ;
+  ("exists", Parser.SUM) ;
+  ("Σ", Parser.SUM) ;
+  ("∃", Parser.SUM) ;
   ("Type", Parser.TYPE)
 ]
 
@@ -89,6 +92,7 @@ and token_aux ({ Ulexbuf.stream;_ } as lexbuf) =
   | ':'                      -> f (); Parser.COLON
   | "=>" | 8658 | 10233      -> f (); Parser.DARROW
   | "->" | 8594 | 10230      -> f (); Parser.ARROW
+  | "***"                    -> f (); Parser.CARTESIAN
   | ":="                     -> f (); Parser.COLONEQ
 
   (* We record the location of operators here because menhir cannot handle %infix and
