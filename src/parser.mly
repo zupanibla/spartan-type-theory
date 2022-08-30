@@ -16,8 +16,6 @@
 (* Expressions *)
 %token TYPE
 %token PROD
-%token SUM
-%token CARTESIAN
 %token LAMBDA
 
 %token NAT
@@ -81,10 +79,8 @@ plain_topcomp:
 term : mark_location(plain_term) { $1 }
 plain_term:
   | e=plain_infix_term                          { e }
-  | PROD a=prod_or_sum_abstraction COMMA e=term { Input.Prod (a, e) }
+  | PROD a=prod_abstraction COMMA e=term        { Input.Prod (a, e) }
   | e1=infix_term ARROW e2=term                 { Input.Arrow (e1, e2) }
-  | SUM a=prod_or_sum_abstraction COMMA e=term  { Input.Sum (a, e) }
-  | e1=infix_term CARTESIAN e2=term             { Input.Cartesian (e1, e2) }
   | LAMBDA a=lambda_abstraction DARROW e=term   { Input.Lambda (a, e) }
   | e=infix_term COLON t=term                   { Input.Ascribe (e, t) }
   | SUCC e=term                                 { Input.Succ e }
@@ -147,7 +143,7 @@ lambda_abstraction:
   | xs=nonempty_list(var_name)               { [(xs, None)] }
   | lst=nonempty_list(typed_binder)          { List.map (fun (xs, t) -> (xs, Some t)) lst }
 
-prod_or_sum_abstraction:
+prod_abstraction:
   | xs=nonempty_list(var_name) COLON t=term  { [(xs, t)] }
   | lst=nonempty_list(typed_binder)          { lst }
 

@@ -13,7 +13,6 @@ type expr =
   | Atom of atom (** primitive symbol *)
   | Type (** the type of types *)
   | Prod of (Name.ident * ty) * ty (** dependent product *)
-  | Sum of (Name.ident * ty) * ty (** dependent sum *)
   | Lambda of (Name.ident * ty) * expr (** lambda abstraction *)
   | Apply of expr * expr (** application *)
   | Nat (** the type of natural numbers *)
@@ -56,11 +55,6 @@ let rec instantiate ?(lvl=0) e e' =
      let t = instantiate_ty ~lvl e t
      and u = instantiate_ty ~lvl:(lvl+1) e u in
      Prod ((x, t), u)
-
-  | Sum ((x, t), u) ->
-     let t = instantiate_ty ~lvl e t
-     and u = instantiate_ty ~lvl:(lvl+1) e u in
-     Sum ((x, t), u)
 
   | Lambda ((x, t), e2) ->
      let t = instantiate_ty ~lvl e t
@@ -106,11 +100,6 @@ let rec abstract ?(lvl=0) x e =
      and u = abstract_ty ~lvl:(lvl+1) x u in
      Prod ((y, t), u)
 
-  | Sum ((y, t), u) ->
-     let t = abstract_ty ~lvl x t
-     and u = abstract_ty ~lvl:(lvl+1) x u in
-     Sum ((y, t), u)
-
   | Lambda ((y, t), e) ->
      let t = abstract_ty ~lvl x t
      and e = abstract ~lvl:(lvl+1) x e in
@@ -151,7 +140,6 @@ let rec occurs k = function
   | Atom _ -> false
   | Type -> false
   | Prod ((_, t), u) -> occurs_ty k t || occurs_ty (k+1) u
-  | Sum ((_, t), u) -> occurs_ty k t || occurs_ty (k+1) u
   | Lambda ((_, t), e) -> occurs_ty k t || occurs (k+1) e
   | Apply (e1, e2) -> occurs k e1 || occurs k e2
   | Nat     -> false
@@ -208,8 +196,6 @@ and print_expr' ~penv ?max_level e ppf =
       | Apply (e1, e2) -> print_app ?max_level ~penv e1 e2 ppf
 
       | Prod ((x, u), t) -> print_prod ?max_level ~penv ((x, u), t) ppf
-
-      | Sum ((x, u), t) -> print_sum ?max_level ~penv ((x, u), t) ppf
 
       | Nat     -> Format.fprintf ppf "N"
       | Zero    -> Format.fprintf ppf "0"
@@ -318,29 +304,6 @@ and print_prod ?max_level ~penv ((x, u), t) ppf =
     let xus, t = collect [(x,u)] t in
     Print.print ?max_level ~at_level:Level.binder ppf "%s%t"
                 (Print.char_prod ())
-                (print_binders ~penv
-                               (print_ty ~max_level:Level.ascription)
-                               (fun ~penv -> print_ty ~max_level:Level.in_binder ~penv t)
-                               xus)
-
-(** [print_sum ((x, u), t) ppf] prints the given sum using formatter [ppf]. *)
-and print_sum ?max_level ~penv ((x, u), t) ppf =
-  if not (occurs_ty 0 t) then
-    Print.print ?max_level ~at_level:Level.arr ppf "@[<hov>%t@ %s@ %t@]"
-          (print_ty ~max_level:Level.arr_left ~penv u)
-          (Print.char_cartesian ())
-          (print_ty ~max_level:Level.arr_right ~penv:(add_forbidden (Name.anonymous ()) penv) t)
-  else
-    let rec collect xus ((Ty t) as t_ty) =
-      match t with
-      | Prod ((x, u), t_ty) when occurs_ty 0 t_ty ->
-         collect ((x, u) :: xus) t_ty
-      | _ ->
-         (List.rev xus, t_ty)
-    in
-    let xus, t = collect [(x,u)] t in
-    Print.print ?max_level ~at_level:Level.binder ppf "%s%t"
-                (Print.char_sum ())
                 (print_binders ~penv
                                (print_ty ~max_level:Level.ascription)
                                (fun ~penv -> print_ty ~max_level:Level.in_binder ~penv t)
