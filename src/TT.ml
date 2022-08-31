@@ -40,6 +40,46 @@ let ty_Type = Ty Type
 (** [Nat] as a type. *)
 let ty_Nat = Ty Nat
 
+let identity_atom = new_atom (Name.Ident("Identity", Name.Word))
+let refl_atom = new_atom (Name.Ident("refl", Name.Word))
+let ind_id_atom = new_atom (Name.Ident("ind_id", Name.Word))
+
+let initial_context = [
+  (
+    identity_atom,
+    Ty (Prod ((Name.Ident ("A", Name.Word), ty_Type),
+      Ty (Prod ((Name.anonymous(), Ty (Bound 0)),
+        Ty (Prod ((Name.anonymous(), Ty (Bound 1)),
+          ty_Type
+        ))
+      ))
+    ))
+  ) ;
+  (
+    refl_atom,
+    Ty (Prod ((Name.Ident ("A", Name.Word), ty_Type),
+      Ty (Prod ((Name.Ident ("a", Name.Word), Ty (Bound 0)),
+        Ty (
+          Apply (
+            Apply (
+              Apply (
+                Atom identity_atom,
+                Bound 1
+              ),
+              Bound 0
+            ),
+            Bound 0
+          )
+        )
+      ))
+    ))
+  ) ;
+  (
+    ind_id_atom,
+    ty_Type
+  ) ;
+]
+
 (** [instantiate ~lvl:k e e'] instantiates deBruijn index [k] with [e] in expression [e']. *)
 let rec instantiate ?(lvl=0) e e' =
   match e' with

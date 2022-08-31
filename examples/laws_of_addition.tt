@@ -1,0 +1,5 @@
+Load "examples/natural_numbers.tt".
+
+Definition right_unit_law := forall (n: N), Identity N (n+0) n.
+
+Eval (fun (n: N) => refl N n): right_unit_law.

@@ -14,7 +14,10 @@ type context =
   }
 
 (** The initial, empty typing context. *)
-let initial = { idents = [] ; defs = [] }
+let initial = {
+  idents = TT.initial_context ;
+  defs = [] ;
+}
 
 (** The list of names which should not be used for printing bound variables. *)
 let penv {idents; _} = List.map (fun (x, _) -> TT.atom_name x) idents

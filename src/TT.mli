@@ -30,6 +30,8 @@ val ty_Type : ty
 (** [Nat] as a type. *)
 val ty_Nat : ty
 
+val initial_context : (atom * ty) list
+
 (** The name of an atom *)
 val atom_name : atom -> Name.ident
 

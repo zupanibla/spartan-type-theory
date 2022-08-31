@@ -27,7 +27,7 @@ let print_error err ppf =
 type context = Name.ident list
 
 (** Initial empty context *)
-let initial = []
+let initial = List.map (fun (a, t) -> TT.atom_name a) TT.initial_context
 
 (** Add a new identifier to the context. *)
 let extend x ctx = x :: ctx
