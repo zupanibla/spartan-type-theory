@@ -57,7 +57,7 @@ Definition ( < ) := λ (a b: N) => b - a.
 Definition ( <= ) := λ (a b: N) => !(a > b).
 Definition ( >= ) := λ (a b: N) => !(a < b).
 
-Definition ( = ) := λ (a b: N) => (a <= b) & (a >= b).
+Definition ( == ) := λ (a b: N) => (a <= b) & (a >= b).
 
 Definition ( / ) := λ (a b: N) => ind(
 	λ (n: N) => N,
@@ -75,4 +75,4 @@ Definition divisor_count := λ (a: N) => ind(
 	a
 ).
 
-Definition is_prime := λ (a: N) => 2 = divisor_count a.
+Definition is_prime := λ (a: N) => 2 == divisor_count a.

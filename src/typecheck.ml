@@ -82,6 +82,11 @@ let rec infer ctx {Location.data=e'; loc} =
           TT.instantiate_ty e2 u
      end
 
+  | Syntax.Ascribe (e, t) ->
+     let t = check_ty ctx t in
+     let e = check ctx e t in
+     e, t
+
   | Syntax.IndNat (p, p0, ps, n) ->
      let p  = check ctx p  (TT.Ty (TT.Prod ((Name.anonymous (), TT.ty_Nat), TT.ty_Type))) in
      let p0 = check ctx p0 (TT.Ty (TT.Apply (p, TT.Zero))) in
@@ -90,8 +95,8 @@ let rec infer ctx {Location.data=e'; loc} =
            TT.Ty (TT.Prod ((Name.anonymous (), TT.Ty (TT.Apply (p, TT.Bound 0))),
               TT.Ty (TT.Apply (p, TT.Succ (TT.Bound 1)))
            ))
-        )
-     )) in
+        ))
+     ) in
      let n  = check ctx n TT.ty_Nat in
      TT.IndNat (p, p0, ps, n),
      TT.Ty (TT.Apply (p, n))
@@ -118,10 +123,46 @@ let rec infer ctx {Location.data=e'; loc} =
      TT.IndEmpty (p, e),
      TT.Ty (TT.Apply (p, e))
 
-  | Syntax.Ascribe (e, t) ->
-     let t = check_ty ctx t in
-     let e = check ctx e t in
-     e, t
+  | Syntax.Identity (e1, e2) ->
+     let e1, t1 = infer ctx e1 in
+     let e2 = check ctx e2 t1 in
+     TT.Identity (e1, e2),
+     TT.ty_Type
+
+  | Syntax.Refl e1 ->
+     let e1, t1 = infer ctx e1 in
+     TT.Refl e1,
+     TT.Ty (TT.Identity (e1, e1))
+
+  | Syntax.IndId (c, d, a, b, p) ->
+     let a, t = infer ctx a in
+     let b = check ctx b t in
+     let p = check ctx p (TT.Ty (TT.Identity (a, b))) in
+     let c = check ctx c (
+         TT.Ty (TT.Prod ((Name.Ident ("x", Name.Word), t),
+            TT.Ty (TT.Prod ((Name.Ident ("y", Name.Word), t),
+               TT.Ty (TT.Prod ((Name.Ident ("p", Name.Word), TT.Ty (TT.Identity (TT.Bound(1), TT.Bound(0)))),
+                  TT.ty_Type
+               ))
+            ))
+         ))
+     ) in
+     let d = check ctx d (
+         TT.Ty (TT.Prod ((Name.Ident ("x", Name.Word), t), TT.Ty (
+            TT.Apply (
+               TT.Apply (
+                  TT.Apply (
+                     c,
+                     TT.Bound 0
+                  ),
+                  TT.Bound 0
+               ),
+               TT.Refl (TT.Bound 0)
+            )
+         )))
+     ) in
+     TT.IndId (c, d, a, b, p),
+     TT.Ty (TT.Apply (TT.Apply (TT.Apply (c, a), b), p))
 
 (** [check ctx e ty] checks that [e] has type [ty] in context [ctx].
     It returns the processed expression [e]. *)
@@ -144,13 +185,17 @@ and check ctx ({Location.data=e'; loc} as e) ty =
   | Syntax.Prod _
   | Syntax.Var _
   | Syntax.Type
+  | Syntax.Ascribe _
   | Syntax.Nat
   | Syntax.Zero
   | Syntax.Succ _
   | Syntax.IndNat _
   | Syntax.Empty
   | Syntax.IndEmpty _
-  | Syntax.Ascribe _ ->
+  | Syntax.Identity _
+  | Syntax.Refl _
+  | Syntax.IndId _
+  ->
      let e, ty' = infer ctx e in
      if Equal.ty ctx ty ty'
      then

@@ -7,6 +7,13 @@ type strategy =
 
 (** Normalize an expression. *)
 let rec norm_expr ~strategy ctx e =
+  let norm e = norm_expr ~strategy ctx e in
+  let norm_if_cbv e =
+  begin
+    match strategy with
+    | WHNF -> e
+    | CBV  -> norm e
+  end in
   match e with
   | TT.Bound k -> assert false
 
@@ -16,7 +23,7 @@ let rec norm_expr ~strategy ctx e =
     begin
       match Context.lookup_def x ctx with
       | None -> e
-      | Some e -> norm_expr ~strategy ctx e
+      | Some e -> norm e
     end
 
   | TT.Prod _ -> e
@@ -24,44 +31,39 @@ let rec norm_expr ~strategy ctx e =
   | TT.Lambda _ -> e
 
   | TT.Apply (e1, e2) ->
-    let e1 = norm_expr ~strategy ctx e1
-    and e2 =
-      begin
-        match strategy with
-        | WHNF -> e2
-        | CBV -> norm_expr ~strategy ctx e2
-      end
-    in
+    let e1 = norm e1
+    and e2 = norm_if_cbv e2 in
     begin
       match e1 with
       | TT.Lambda (_, e') ->
         let e' = TT.instantiate e2 e' in
-        norm_expr ~strategy ctx e'
+        norm e'
       | _ -> TT.Apply (e1, e2)
     end
 
   | TT.Nat    -> e
   | TT.Zero   -> e
-  | TT.Succ n -> TT.Succ (norm_expr ~strategy ctx n)
+  | TT.Succ n -> TT.Succ (norm_if_cbv n)
   | TT.IndNat (p, p0, ps, n) ->
-     let n = norm_expr ~strategy ctx n in
+     let n' = norm n in
      begin
-       match n with
-       | TT.Zero   -> norm_expr ~strategy ctx p0
-       | TT.Succ m -> norm_expr ~strategy ctx (TT.Apply (TT.Apply (ps, m), TT.IndNat (p, p0, ps, m)))
-       | _ -> TT.IndNat (
-           norm_expr ~strategy ctx p,
-           norm_expr ~strategy ctx p0,
-           norm_expr ~strategy ctx ps,
-           norm_expr ~strategy ctx n
-         )
+       match n' with
+       | TT.Zero   -> norm_if_cbv p0
+       | TT.Succ m -> norm_if_cbv (TT.Apply (TT.Apply (ps, m), TT.IndNat (p, p0, ps, m)))
+       | _ -> TT.IndNat (norm_if_cbv p, norm_if_cbv p0, norm_if_cbv ps, norm_if_cbv n)
      end
 
   | TT.Empty -> e
-  | TT.IndEmpty (p, e) -> TT.IndEmpty (
-     norm_expr ~strategy ctx p,
-     norm_expr ~strategy ctx e
-  )
+  | TT.IndEmpty (p, e) -> TT.IndEmpty (norm_if_cbv p, norm_if_cbv e)
+  | TT.Identity (e1, e2) -> TT.Identity (norm e1, norm e2)
+  | TT.Refl n -> TT.Refl (norm_if_cbv n)
+  | TT.IndId (c, d, a, b, p) -> 
+    let p' = norm p in
+    begin
+      match p' with
+      | TT.Refl e -> norm_if_cbv (TT.Apply (d, a))
+      | _ -> TT.IndId (norm_if_cbv c, norm_if_cbv d, norm_if_cbv a, norm_if_cbv b, norm_if_cbv p)
+    end
 
 (** Normalize a type *)
 let norm_ty ~strategy ctx (TT.Ty ty) =
@@ -76,7 +78,7 @@ let as_prod ctx t =
   | _ -> None
 
 (** Compare expressions [e1] and [e2] at type [ty]? *)
-let rec expr ctx e1 e2 ty =
+let rec expr ctx e1 e2 ty = let _ = print_string "X\n" in
   (* short-circuit *)
   (e1 == e2) ||
   begin
@@ -102,7 +104,11 @@ let rec expr ctx e1 e2 ty =
     | TT.Succ _
     | TT.IndNat _
     | TT.Empty
-    | TT.IndEmpty _ ->
+    | TT.IndEmpty _
+    | TT.Identity _
+    | TT.Refl _
+    | TT.IndId _
+    ->
       (* Type-directed phase is done, we compare normal forms. *)
       let e1 = norm_expr ~strategy:WHNF ctx e1
       and e2 = norm_expr ~strategy:WHNF ctx e2 in
@@ -115,6 +121,9 @@ let rec expr ctx e1 e2 ty =
 
 (** Structurally compare weak head-normal expressions [e1] and [e2]. *)
 and expr_whnf ctx e1 e2 =
+  let _ = print_string "B\n" in let e1' = e1 in let e2' = e2 in
+  let _ = Format.printf "@[<hov>%t@]@\n" (TT.print_expr ~penv:(Context.penv ctx) e1') in 
+  let _ = Format.printf "@[<hov>%t@]@\n" (TT.print_expr ~penv:(Context.penv ctx) e2') in 
   match e1, e2 with
 
   | TT.Type, TT.Type -> true
@@ -137,6 +146,7 @@ and expr_whnf ctx e1 e2 =
     end
 
   | TT.Lambda ((x, t1), e1), TT.Lambda ((_, t2), e2)  ->
+    let _ = print_string "A\n" in
     (* We should never have to compare two lambdas, as that would mean that the
        type-directed phase did not figure out that these have product types. *)
     assert false
@@ -170,8 +180,18 @@ and expr_whnf ctx e1 e2 =
      expr_whnf ctx a1 b1 &&
      expr_whnf ctx a2 b2
 
+  | TT.Identity (a1, a2), TT.Identity (b1, b2) ->
+     expr_whnf ctx a1 b1 &&
+     expr_whnf ctx a2 b2
+  | TT.Refl e1, TT.Refl e2 -> expr_whnf ctx e1 e2
+  | TT.IndId (a1, a2, a3, a4, a5), TT.IndId (b1, b2, b3, b4, b5) ->
+     expr_whnf ctx a1 b1 &&
+     expr_whnf ctx a2 b2 &&
+     expr_whnf ctx a3 b3 &&
+     expr_whnf ctx a4 b4
+
   | (TT.Type | TT.Bound _ | TT.Atom _ | TT.Prod _ | TT.Lambda _ | TT.Apply _ |
-     TT.Nat | TT.Zero | TT.Succ _ | TT.IndNat _ | TT.Empty | TT.IndEmpty _), _ ->
+     TT.Nat | TT.Zero | TT.Succ _ | TT.IndNat _ | TT.Empty | TT.IndEmpty _ | TT.Identity _ | TT.Refl _ | TT.IndId _), _ ->
     false
 
 (** Compare two types. *)
