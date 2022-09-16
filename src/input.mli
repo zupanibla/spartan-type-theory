@@ -17,6 +17,9 @@ and expr' =
   | Ascribe of expr * ty
   | Empty
   | IndEmpty of expr * expr
+  | Identity of expr * expr
+  | Refl of expr
+  | IndId of expr * expr * expr
 
 (** Parsed type (equal to expression). *)
 and ty = expr

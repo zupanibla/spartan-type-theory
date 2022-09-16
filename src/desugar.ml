@@ -79,6 +79,11 @@ let rec expr ctx {Location.data=e; Location.loc=loc} =
        and e2 = expr ctx e2 in
        Location.locate ~loc (Syntax.Apply (e1, e2))
 
+    | Input.Ascribe (e, t) ->
+       let e = expr ctx e
+       and t = ty ctx t in
+       Location.locate ~loc (Syntax.Ascribe (e, t))
+
     | Input.Nat       -> Location.locate ~loc Syntax.Nat
     | Input.Zero      -> Location.locate ~loc Syntax.Zero
     | Input.Succ e1   -> Location.locate ~loc (Syntax.Succ (expr ctx e1))
@@ -94,10 +99,12 @@ let rec expr ctx {Location.data=e; Location.loc=loc} =
     | Input.IndEmpty (e1, e2) ->
        Location.locate ~loc (Syntax.IndEmpty (expr ctx e1, expr ctx e2))
 
-    | Input.Ascribe (e, t) ->
-       let e = expr ctx e
-       and t = ty ctx t in
-       Location.locate ~loc (Syntax.Ascribe (e, t))
+
+    | Input.Identity (e1, e2) ->
+       Location.locate ~loc (Syntax.Identity (expr ctx e1, expr ctx e2))
+    | Input.Refl e1   -> Location.locate ~loc (Syntax.Refl (expr ctx e1))
+    | Input.IndId (e1, e2, e3) -> Location.locate ~loc
+         (Syntax.IndId ((expr ctx e1), (expr ctx e2), (expr ctx e3)))
 
 
 (** Desugar a type, which at this stage is the same as an expressions. *)

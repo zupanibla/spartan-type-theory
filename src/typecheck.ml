@@ -82,6 +82,11 @@ let rec infer ctx {Location.data=e'; loc} =
           TT.instantiate_ty e2 u
      end
 
+  | Syntax.Ascribe (e, t) ->
+     let t = check_ty ctx t in
+     let e = check ctx e t in
+     e, t
+
   | Syntax.IndNat (p, p0, ps, n) ->
      let p  = check ctx p  (TT.Ty (TT.Prod ((Name.anonymous (), TT.ty_Nat), TT.ty_Type))) in
      let p0 = check ctx p0 (TT.Ty (TT.Apply (p, TT.Zero))) in
@@ -90,8 +95,8 @@ let rec infer ctx {Location.data=e'; loc} =
            TT.Ty (TT.Prod ((Name.anonymous (), TT.Ty (TT.Apply (p, TT.Bound 0))),
               TT.Ty (TT.Apply (p, TT.Succ (TT.Bound 1)))
            ))
-        )
-     )) in
+        ))
+     ) in
      let n  = check ctx n TT.ty_Nat in
      TT.IndNat (p, p0, ps, n),
      TT.Ty (TT.Apply (p, n))
@@ -113,15 +118,61 @@ let rec infer ctx {Location.data=e'; loc} =
      TT.ty_Type
 
   | Syntax.IndEmpty (p, e) ->
-     let p  = check ctx p  (TT.Ty (TT.Prod ((Name.anonymous (), TT.Ty (TT.Empty)), TT.ty_Type)))
+     let p  = check ctx p (TT.Ty (TT.Prod ((Name.anonymous (), TT.Ty (TT.Empty)), TT.ty_Type)))
      and e  = check ctx e (TT.Ty (TT.Empty)) in
      TT.IndEmpty (p, e),
      TT.Ty (TT.Apply (p, e))
 
-  | Syntax.Ascribe (e, t) ->
-     let t = check_ty ctx t in
-     let e = check ctx e t in
-     e, t
+  | Syntax.Identity (e1, e2) ->
+     let e1, t1 = infer ctx e1 in
+     let e2 = check ctx e2 t1 in
+     TT.Identity (t1, e1, e2),
+     TT.ty_Type
+
+  | Syntax.Refl e1 ->
+     let e1, t1 = infer ctx e1 in
+     TT.Refl (t1, e1),
+     TT.Ty (TT.Identity (t1, e1, e1))
+
+  | Syntax.IndId (c, d, p') ->
+     let p, pt = infer ctx p' in
+     let pt = Equal.norm_ty ~strategy:Equal.WHNF ctx pt in
+     let t, a, b = begin match pt with
+     | TT.Ty(TT.Identity(t, a, b)) -> t, a, b
+     (* there's probably a better way to handle this case*)
+     | _ -> (TT.Ty (check ctx p' (TT.Ty(TT.Identity(
+         TT.Ty(TT.Atom(TT.new_atom(Name.anonymous()))),
+         TT.Atom(TT.new_atom(Name.anonymous())),
+         TT.Atom(TT.new_atom(Name.anonymous()))
+      ))))),
+     TT.Atom(TT.new_atom(Name.anonymous())),
+     TT.Atom(TT.new_atom(Name.anonymous()))
+     end in
+     let c = check ctx c (
+         TT.Ty (TT.Prod ((Name.Ident ("x", Name.Word), t),
+            TT.Ty (TT.Prod ((Name.Ident ("y", Name.Word), t),
+               TT.Ty (TT.Prod ((Name.Ident ("p", Name.Word), TT.Ty (TT.Identity (t, TT.Bound(1), TT.Bound(0)))),
+                  TT.ty_Type
+               ))
+            ))
+         ))
+     ) in
+     let d = check ctx d (
+         TT.Ty (TT.Prod ((Name.Ident ("x", Name.Word), t), TT.Ty (
+            TT.Apply (
+               TT.Apply (
+                  TT.Apply (
+                     c,
+                     TT.Bound 0
+                  ),
+                  TT.Bound 0
+               ),
+               TT.Refl (t, TT.Bound 0)
+            )
+         )))
+     ) in
+     TT.IndId (t, c, d, a, b, p),
+     TT.Ty (TT.Apply (TT.Apply (TT.Apply (c, a), b), p))
 
 (** [check ctx e ty] checks that [e] has type [ty] in context [ctx].
     It returns the processed expression [e]. *)
@@ -144,13 +195,17 @@ and check ctx ({Location.data=e'; loc} as e) ty =
   | Syntax.Prod _
   | Syntax.Var _
   | Syntax.Type
+  | Syntax.Ascribe _
   | Syntax.Nat
   | Syntax.Zero
   | Syntax.Succ _
   | Syntax.IndNat _
   | Syntax.Empty
   | Syntax.IndEmpty _
-  | Syntax.Ascribe _ ->
+  | Syntax.Identity _
+  | Syntax.Refl _
+  | Syntax.IndId _
+  ->
      let e, ty' = infer ctx e in
      if Equal.ty ctx ty ty'
      then

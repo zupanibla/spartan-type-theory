@@ -1,0 +1,58 @@
+Load "examples/natural_numbers.tt".
+
+Definition right_unit_law := (λ (n: N) => refl n).
+Check right_unit_law: ∀ (n: N), n+0=n.
+
+
+Definition ap := λ (A B: Type) (f: A → B) (x y: A) (p: x=y) => ind_id(
+	λ (x y: A) (p: x=y) => f(x)=f(y),
+	λ (x: A) => refl(f(x)),
+	p
+).
+Check ap: ∀ (A B: Type) (f: A → B) (x y: A), (x=y) → (f(x)=f(y)).
+
+
+Definition left_unit_law := λ (n: N) => ind(
+	λ (n: N) => 0+n=n,
+	refl 0,
+	λ (n: N) (p: 0+n=n) => ap N N (λ (n: N) => succ n) (0+n) n p,
+	n
+).
+Check left_unit_law: ∀ (n: N), 0+n=n.
+
+
+Definition right_successor_law := λ (n m: N) => (refl (succ (n + m))).
+Check right_successor_law: ∀ (n m: N), (n + (succ m)) = (succ (n + m)).
+
+
+Definition Q := λ (n m: N) => ((succ n) + m) = (succ (n + m)).
+
+Definition left_successor_law := λ (n m: N) => ind(
+	Q n,
+	refl (succ n),
+	λ (m: N) (p: (Q n m)) => ap N N (λ (n: N) => succ n) ((succ n) + m) (succ (n + m)) p,
+	m
+).
+Check left_successor_law: ∀ (n m: N), ((succ n) + m) = (succ (n + m)).
+
+
+Definition concat := λ (A: Type) (x y z: A) (p: x=y) => ind_id(
+	λ (x y: A) (p: x=y) => (y=z) -> (x=z),
+	λ (x: A) => λ (p: x=z) => p,
+	p
+).
+Check concat : ∀ (A: Type) (x y z: A), (x=y) -> (y=z) -> (x=z).
+
+
+Definition R := λ (n m: N) => m+n = n+m.
+
+Definition commutativity := λ (n m: N) => ind(
+	R n,
+	left_unit_law n,
+	λ (m: N) (p: R n m) => concat N ((succ m)+n) (succ (m+n)) (n + (succ m))
+		(left_successor_law m n)
+		(ap N N (λ (n: N) => succ n) (m+n) (n+m) p),
+	m
+).
+
+Check commutativity : ∀ (n m: N), m+n = n+m.

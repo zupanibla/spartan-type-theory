@@ -11,13 +11,16 @@ and expr' =
   | Prod of (Name.ident * ty) * ty
   | Lambda of (Name.ident * ty option) * expr
   | Apply of expr * expr
+  | Ascribe of expr * ty
   | Nat
   | Zero
   | Succ of expr
   | IndNat of expr * expr * expr * expr
   | Empty
   | IndEmpty of expr * expr
-  | Ascribe of expr * ty
+  | Identity of expr * expr
+  | Refl of expr
+  | IndId of expr * expr * expr
 
 (** Types (equal to expressions at this point). *)
 and ty = expr
@@ -57,6 +60,11 @@ and shift' n k = function
      and e2 = shift n k e2 in
      Apply (e1, e2)
 
+  | Ascribe (e, t) ->
+     let e = shift n k e
+     and t = shift_ty n k t in
+     Ascribe (e, t)
+
   | Nat     -> Nat
   | Zero    -> Zero
   | Succ e1 -> Succ (shift n k e1)
@@ -73,10 +81,16 @@ and shift' n k = function
      and e2 = shift n k e2 in
      IndEmpty (e1, e2)
 
-  | Ascribe (e, t) ->
-     let e = shift n k e
-     and t = shift_ty n k t in
-     Ascribe (e, t)
+  | Identity (e1, e2) ->
+     let e1 = shift n k e1
+     and e2 = shift n k e2 in
+     Identity (e1, e2)
+  | Refl e1 -> Refl (shift n k e1)
+  | IndId (e1, e2, e3) ->
+     let e1 = shift n k e1
+     and e2 = shift n k e2
+     and e3 = shift n k e3 in
+     IndId (e1, e2, e3)
 
 and shift_ty n k t = shift n k t
 

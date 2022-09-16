@@ -21,6 +21,9 @@ type expr =
   | IndNat of expr * expr * expr * expr (** induction on natural numbers *)
   | Empty (** the empty type **)
   | IndEmpty of expr * expr (** induction on the empty type **)
+  | Identity of ty * expr * expr (** the identity type **)
+  | Refl of ty * expr (** constructor of the identity type **)
+  | IndId of ty * expr * expr * expr * expr * expr (** induction on the identity type *)
 
 (** Type *)
 and ty = Ty of expr
@@ -80,6 +83,25 @@ let rec instantiate ?(lvl=0) e e' =
   | IndEmpty (e1, e2) -> IndEmpty (instantiate ~lvl e e1, instantiate ~lvl e e2)
 
 
+  | Identity (t, e1, e2) ->
+     let t  = instantiate_ty ~lvl e t
+     and e1 = instantiate ~lvl e e1
+     and e2 = instantiate ~lvl e e2 in
+     Identity (t, e1, e2)
+  | Refl (t, e1) ->
+     let t  = instantiate_ty ~lvl e t
+     and e1 = instantiate ~lvl e e1 in
+     Refl (t, e1)
+  | IndId (t, e1, e2, e3, e4, e5) ->
+     let t  = instantiate_ty ~lvl e t
+     and e1 = instantiate ~lvl e e1
+     and e2 = instantiate ~lvl e e2
+     and e3 = instantiate ~lvl e e3
+     and e4 = instantiate ~lvl e e4
+     and e5 = instantiate ~lvl e e5 in
+     IndId (t, e1, e2, e3, e4, e5)
+
+
 (** [instantiate k e t] instantiates deBruijn index [k] with [e] in type [t]. *)
 and instantiate_ty ?(lvl=0) e (Ty t) =
   let t = instantiate ~lvl e t in
@@ -123,6 +145,24 @@ let rec abstract ?(lvl=0) x e =
   | Empty -> e
   | IndEmpty (e1, e2) -> IndEmpty (abstract ~lvl x e1, abstract ~lvl x e2)
 
+  | Identity (t, e1, e2) ->
+     let t  = abstract_ty ~lvl x t
+     and e1 = abstract ~lvl x e1
+     and e2 = abstract ~lvl x e2 in
+     Identity (t, e1, e2)
+  | Refl (t, e1) ->
+     let t  = abstract_ty ~lvl x t
+     and e1 = abstract ~lvl x e1 in
+     Refl (t, e1)
+  | IndId (t, e1, e2, e3, e4, e5) ->
+     let t  = abstract_ty ~lvl x t
+     and e1 = abstract ~lvl x e1
+     and e2 = abstract ~lvl x e2
+     and e3 = abstract ~lvl x e3
+     and e4 = abstract ~lvl x e4
+     and e5 = abstract ~lvl x e5 in
+     IndId (t, e1, e2, e3, e4, e5)
+
 (** [abstract_ty ~lvl x t] abstracts atom [x] into bound index [lvl] in type [t]. *)
 and abstract_ty ?(lvl=0) x (Ty t) =
   let t = abstract ~lvl x t in
@@ -148,6 +188,9 @@ let rec occurs k = function
   | IndNat (e1, e2, e3, e4) -> occurs k e1 || occurs k e2 || occurs k e3 || occurs k e4
   | Empty -> false
   | IndEmpty (e1, e2) -> occurs k e1 || occurs k e2
+  | Identity (t, e1, e2) -> occurs_ty k t || occurs k e1 || occurs k e2
+  | Refl (t, e1) -> occurs_ty k t || occurs k e1
+  | IndId (t, e1, e2, e3, e4, e5) -> occurs_ty k t || occurs k e1 || occurs k e2 || occurs k e3 || occurs k e4 || occurs k e5
 
 (** [occurs_ty k t] returns [true] when de Bruijn index [k] occurs in type [t]. *)
 and occurs_ty k (Ty t) = occurs k t
@@ -208,6 +251,14 @@ and print_expr' ~penv ?max_level e ppf =
       | Empty -> Format.fprintf ppf "Empty"
       | IndEmpty (e1, e2) -> Print.print ppf "ind_empty(%t, %t)"
          (print_expr ?max_level ~penv e1) (print_expr ?max_level ~penv e2)
+
+      | Identity (t, e1, e2) -> Print.print ppf "%t=%t"
+         (print_expr ?max_level ~penv e1) (print_expr ?max_level ~penv e2)
+      | Refl (t, e1) -> Print.print ppf "refl(%t)"
+         (print_expr ?max_level ~penv e1)
+      | IndId (t, e1, e2, e3, e4, e5) -> Print.print ppf "ind_id(%t, %t, %t)"
+         (print_expr ?max_level ~penv e1) (print_expr ?max_level ~penv e2)
+         (print_expr ?max_level ~penv e5)
 
 and print_ty ?max_level ~penv (Ty t) ppf = print_expr ?max_level ~penv t ppf
 

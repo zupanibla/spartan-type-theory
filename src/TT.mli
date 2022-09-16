@@ -20,6 +20,9 @@ type expr =
   | IndNat of expr * expr * expr * expr (** induction on natural numbers *)
   | Empty (** the empty type **)
   | IndEmpty of expr * expr (** induction on the empty type **)
+  | Identity of ty * expr * expr (** the identity type **)
+  | Refl of ty * expr (** constructor of the identity type **)
+  | IndId of ty * expr * expr * expr * expr * expr (** induction on the identity type *)
 
 (** Type *)
 and ty = Ty of expr

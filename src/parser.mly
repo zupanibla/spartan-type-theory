@@ -25,6 +25,10 @@
 %token IND
 %token EMPTY
 %token IND_EMPTY
+%token IDENTITY
+%token EQUALS
+%token REFL
+%token IND_ID
 
 (* Toplevel commands *)
 
@@ -84,9 +88,14 @@ plain_term:
   | LAMBDA a=lambda_abstraction DARROW e=term   { Input.Lambda (a, e) }
   | e=infix_term COLON t=term                   { Input.Ascribe (e, t) }
   | SUCC e=term                                 { Input.Succ e }
+  | REFL e=term                                 { Input.Refl e }
   | IND_EMPTY LPAREN e1=term COMMA e2=term RPAREN   { Input.IndEmpty (e1, e2) }
+  | IDENTITY LPAREN e1=term COMMA e2=term RPAREN   { Input.Identity (e1, e2) }
   | IND LPAREN e1=term COMMA e2=term COMMA e3=term COMMA e4=term RPAREN
      { Input.IndNat (e1, e2, e3, e4) }
+  | IND_ID LPAREN e1=term COMMA e2=term COMMA e3=term RPAREN
+     { Input.IndId (e1, e2, e3) }
+  | e1=infix_term EQUALS e2=infix_term { Input.Identity (e1, e2) }
 
 infix_term: mark_location(plain_infix_term) { $1 }
 plain_infix_term:

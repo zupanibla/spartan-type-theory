@@ -7,6 +7,16 @@ type strategy =
 
 (** Normalize an expression. *)
 let rec norm_expr ~strategy ctx e =
+  let norm e = norm_expr ~strategy ctx e in
+  let norm_ty t = norm_ty ~strategy ctx t in
+  let norm_if_cbv e = begin match strategy with
+    | WHNF -> e
+    | CBV  -> norm e
+  end in
+  let norm_ty_if_cbv t = begin match strategy with
+    | WHNF -> t
+    | CBV  -> norm_ty t
+  end in
   match e with
   | TT.Bound k -> assert false
 
@@ -16,7 +26,7 @@ let rec norm_expr ~strategy ctx e =
     begin
       match Context.lookup_def x ctx with
       | None -> e
-      | Some e -> norm_expr ~strategy ctx e
+      | Some e -> norm e
     end
 
   | TT.Prod _ -> e
@@ -24,47 +34,42 @@ let rec norm_expr ~strategy ctx e =
   | TT.Lambda _ -> e
 
   | TT.Apply (e1, e2) ->
-    let e1 = norm_expr ~strategy ctx e1
-    and e2 =
-      begin
-        match strategy with
-        | WHNF -> e2
-        | CBV -> norm_expr ~strategy ctx e2
-      end
-    in
+    let e1 = norm e1
+    and e2 = norm_if_cbv e2 in
     begin
       match e1 with
       | TT.Lambda (_, e') ->
         let e' = TT.instantiate e2 e' in
-        norm_expr ~strategy ctx e'
+        norm e'
       | _ -> TT.Apply (e1, e2)
     end
 
   | TT.Nat    -> e
   | TT.Zero   -> e
-  | TT.Succ n -> TT.Succ (norm_expr ~strategy ctx n)
+  | TT.Succ n -> TT.Succ (norm_if_cbv n)
   | TT.IndNat (p, p0, ps, n) ->
-     let n = norm_expr ~strategy ctx n in
-     begin
-       match n with
-       | TT.Zero   -> norm_expr ~strategy ctx p0
-       | TT.Succ m -> norm_expr ~strategy ctx (TT.Apply (TT.Apply (ps, m), TT.IndNat (p, p0, ps, m)))
-       | _ -> TT.IndNat (
-           norm_expr ~strategy ctx p,
-           norm_expr ~strategy ctx p0,
-           norm_expr ~strategy ctx ps,
-           norm_expr ~strategy ctx n
-         )
-     end
+    let n' = norm n in
+    begin
+     match n' with
+     | TT.Zero   -> norm p0
+     | TT.Succ m -> norm (TT.Apply (TT.Apply (ps, m), TT.IndNat (p, p0, ps, m)))
+     | _ -> TT.IndNat (norm_if_cbv p, norm_if_cbv p0, norm_if_cbv ps, norm_if_cbv n)
+    end
 
   | TT.Empty -> e
-  | TT.IndEmpty (p, e) -> TT.IndEmpty (
-     norm_expr ~strategy ctx p,
-     norm_expr ~strategy ctx e
-  )
+  | TT.IndEmpty (p, e) -> TT.IndEmpty (norm_if_cbv p, norm_if_cbv e)
+  | TT.Identity (t, e1, e2) -> TT.Identity (norm_ty_if_cbv t, norm_if_cbv e1, norm_if_cbv e2)
+  | TT.Refl (t, e) -> TT.Refl (norm_ty_if_cbv t, norm_if_cbv e)
+  | TT.IndId (t, c, d, a, b, p) ->
+    let p' = norm p in
+    begin
+      match p' with
+      | TT.Refl (t, e) -> norm (TT.Apply (d, a))
+      | _ -> TT.IndId (norm_ty_if_cbv t, norm_if_cbv c, norm_if_cbv d, norm_if_cbv a, norm_if_cbv b, norm_if_cbv p)
+    end
 
 (** Normalize a type *)
-let norm_ty ~strategy ctx (TT.Ty ty) =
+and norm_ty ~strategy ctx (TT.Ty ty) =
   let ty = norm_expr ~strategy ctx ty in
   TT.Ty ty
 
@@ -102,7 +107,11 @@ let rec expr ctx e1 e2 ty =
     | TT.Succ _
     | TT.IndNat _
     | TT.Empty
-    | TT.IndEmpty _ ->
+    | TT.IndEmpty _
+    | TT.Identity _
+    | TT.Refl _
+    | TT.IndId _
+    ->
       (* Type-directed phase is done, we compare normal forms. *)
       let e1 = norm_expr ~strategy:WHNF ctx e1
       and e2 = norm_expr ~strategy:WHNF ctx e2 in
@@ -158,20 +167,65 @@ and expr_whnf ctx e1 e2 =
 
   | TT.Nat, TT.Nat -> true
   | TT.Zero, TT.Zero -> true
-  | TT.Succ e1, TT.Succ e2 -> expr_whnf ctx e1 e2
+  | TT.Succ e1, TT.Succ e2 -> expr ctx e1 e2 TT.ty_Nat
   | TT.IndNat (a1, a2, a3, a4), TT.IndNat (b1, b2, b3, b4) ->
-     expr_whnf ctx a1 b1 &&
-     expr_whnf ctx a2 b2 &&
-     expr_whnf ctx a3 b3 &&
-     expr_whnf ctx a4 b4
+     let p = a1 in
+     expr ctx a1 b1 (TT.Ty (TT.Prod ((Name.anonymous (), TT.ty_Nat), TT.ty_Type))) &&
+     expr ctx a2 b2 (TT.Ty (TT.Apply (p, TT.Zero))) &&
+     expr ctx a3 b3 (
+        TT.Ty (TT.Prod ((Name.anonymous (), TT.ty_Nat),
+           TT.Ty (TT.Prod ((Name.anonymous (), TT.Ty (TT.Apply (p, TT.Bound 0))),
+              TT.Ty (TT.Apply (p, TT.Succ (TT.Bound 1)))
+           ))
+        ))
+     ) &&
+     expr ctx a4 b4 TT.ty_Nat
 
   | TT.Empty, TT.Empty -> true
   | TT.IndEmpty (a1, a2), TT.IndEmpty (b1, b2) ->
-     expr_whnf ctx a1 b1 &&
-     expr_whnf ctx a2 b2
+     expr ctx a1 b1 (TT.Ty (TT.Prod ((Name.anonymous (), TT.Ty (TT.Empty)), TT.ty_Type))) &&
+     expr ctx a2 b2 (TT.Ty TT.Empty)
 
+  | TT.Identity (at, a1, a2), TT.Identity (bt, b1, b2) ->
+     ty ctx at bt &&
+     expr ctx a1 b1 at &&
+     expr ctx a2 b2 at
+  | TT.Refl (t1, e1), TT.Refl (t2, e2) ->
+     ty ctx t1 t2 &&
+     expr ctx e1 e2 t1
+  | TT.IndId (t1, c1, d1, a1, b1, p1), TT.IndId (t2, c2, d2, a2, b2, p2) ->
+     ty ctx t1 t2 &&
+     expr ctx a1 a2 t1 &&
+     expr ctx b1 b2 t1 &&
+     let t = t1 and a = a1 and b = b1 in
+     expr ctx p1 p2 (TT.Ty (TT.Identity (t, a, b))) &&
+     let t = t1 in
+     expr ctx c1 c2 (
+       TT.Ty (TT.Prod ((Name.Ident ("x", Name.Word), t),
+          TT.Ty (TT.Prod ((Name.Ident ("y", Name.Word), t),
+             TT.Ty (TT.Prod ((Name.Ident ("p", Name.Word), TT.Ty (TT.Identity (t, TT.Bound(1), TT.Bound(0)))),
+                TT.ty_Type
+             ))
+          ))
+       ))
+     ) &&
+     let t = t1 and c = c1 in
+     expr ctx d1 d2 (
+       TT.Ty (TT.Prod ((Name.Ident ("x", Name.Word), t), TT.Ty (
+          TT.Apply (
+             TT.Apply (
+                TT.Apply (
+                   c,
+                   TT.Bound 0
+                ),
+                TT.Bound 0
+             ),
+             TT.Refl (t, TT.Bound 0)
+          )
+       )))
+     )
   | (TT.Type | TT.Bound _ | TT.Atom _ | TT.Prod _ | TT.Lambda _ | TT.Apply _ |
-     TT.Nat | TT.Zero | TT.Succ _ | TT.IndNat _ | TT.Empty | TT.IndEmpty _), _ ->
+     TT.Nat | TT.Zero | TT.Succ _ | TT.IndNat _ | TT.Empty | TT.IndEmpty _ | TT.Identity _ | TT.Refl _ | TT.IndId _), _ ->
     false
 
 (** Compare two types. *)
