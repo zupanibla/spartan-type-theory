@@ -245,20 +245,24 @@ and print_expr' ~penv ?max_level e ppf =
       | Succ e1 -> print_succ ?max_level ~penv e 0 ppf
 
       | IndNat (e1, e2, e3, e4) -> Print.print ppf "ind(%t, %t, %t, %t)"
-         (print_expr ?max_level ~penv e1) (print_expr ?max_level ~penv e2)
-         (print_expr ?max_level ~penv e3) (print_expr ?max_level ~penv e4)
+         (print_expr_with_parentheses_if_has_comma ?max_level ~penv e1)
+         (print_expr_with_parentheses_if_has_comma ?max_level ~penv e2)
+         (print_expr_with_parentheses_if_has_comma ?max_level ~penv e3)
+         (print_expr_with_parentheses_if_has_comma ?max_level ~penv e4)
 
       | Empty -> Format.fprintf ppf "Empty"
       | IndEmpty (e1, e2) -> Print.print ppf "ind_empty(%t, %t)"
-         (print_expr ?max_level ~penv e1) (print_expr ?max_level ~penv e2)
+         (print_expr_with_parentheses_if_has_comma ?max_level ~penv e1)
+         (print_expr_with_parentheses_if_has_comma ?max_level ~penv e2)
 
       | Identity (t, e1, e2) -> Print.print ppf "%t=%t"
          (print_expr ?max_level ~penv e1) (print_expr ?max_level ~penv e2)
       | Refl (t, e1) -> Print.print ppf "refl(%t)"
          (print_expr ?max_level ~penv e1)
       | IndId (t, e1, e2, e3, e4, e5) -> Print.print ppf "ind_id(%t, %t, %t)"
-         (print_expr ?max_level ~penv e1) (print_expr ?max_level ~penv e2)
-         (print_expr ?max_level ~penv e5)
+         (print_expr_with_parentheses_if_has_comma ?max_level ~penv e1)
+         (print_expr_with_parentheses_if_has_comma ?max_level ~penv e2)
+         (print_expr_with_parentheses_if_has_comma ?max_level ~penv e5)
 
 and print_ty ?max_level ~penv (Ty t) ppf = print_expr ?max_level ~penv t ppf
 
@@ -369,4 +373,11 @@ and print_succ ?max_level ~penv e depth ppf =
 and wrap_in_n_succs ?max_level ~penv e n ppf =
   match n with
     | 0 -> Print.print ppf "%t" (print_expr ?max_level ~penv e)
-    | n -> Print.print ppf "succ(%t)" (wrap_in_n_succs ?max_level ~penv e (n-1))
+    | n -> Print.print ppf "succ %t" (wrap_in_n_succs ?max_level ~penv e (n-1))
+
+and print_expr_with_parentheses_if_has_comma ?max_level ~penv e ppf = (* TODO there is a better way to do this *)
+  match e with
+    | Prod _
+    | Lambda _
+    -> Print.print ppf "(%t)" (print_expr ?max_level ~penv e)
+    | _ ->  print_expr ?max_level ~penv e ppf
