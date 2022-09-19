@@ -88,11 +88,11 @@ let rec infer ctx {Location.data=e'; loc} =
      e, t
 
   | Syntax.IndNat (p, p0, ps, n) ->
-     let p  = check ctx p  (TT.Ty (TT.Prod ((Name.anonymous (), TT.ty_Nat), TT.ty_Type))) in
+     let p  = check ctx p  (TT.Ty (TT.Prod ((Name.Ident ("n", Name.Word), TT.ty_Nat), TT.ty_Type))) in
      let p0 = check ctx p0 (TT.Ty (TT.Apply (p, TT.Zero))) in
      let ps = check ctx ps (
-        TT.Ty (TT.Prod ((Name.anonymous (), TT.ty_Nat),
-           TT.Ty (TT.Prod ((Name.anonymous (), TT.Ty (TT.Apply (p, TT.Bound 0))),
+        TT.Ty (TT.Prod ((Name.Ident ("n", Name.Word), TT.ty_Nat),
+           TT.Ty (TT.Prod ((Name.Ident ("m", Name.Word), TT.Ty (TT.Apply (p, TT.Bound 0))),
               TT.Ty (TT.Apply (p, TT.Succ (TT.Bound 1)))
            ))
         ))
@@ -176,10 +176,10 @@ let rec infer ctx {Location.data=e'; loc} =
 
 (** [check ctx e ty] checks that [e] has type [ty] in context [ctx].
     It returns the processed expression [e]. *)
-and check ctx ({Location.data=e'; loc} as e) ty =
+and check ctx ({Location.data=e'; loc} as e) ty = (* TODO REVIEW *)
   match e' with
 
-  | Syntax.Lambda ((x, None), e) ->
+  | Syntax.Lambda ((y, None), e) ->
      begin
        match Equal.as_prod ctx ty with
        | None -> error ~loc (TypeExpectedButFunction ty)
@@ -188,7 +188,8 @@ and check ctx ({Location.data=e'; loc} as e) ty =
           let ctx = Context.extend_ident x' t ctx in
           let u = TT.unabstract_ty x' u in
           let e = check ctx e u in
-          TT.Lambda ((x, t), e)
+          let e = TT.abstract x' e in
+          TT.Lambda ((y, t), e)
      end
 
   | Syntax.Lambda ((_, Some _), _)

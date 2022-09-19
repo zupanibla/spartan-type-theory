@@ -1,49 +1,49 @@
 Definition ( + ) := λ (a b: N) => ind(
-	λ (n: N) => N,
+	λ n => N,
 	a,
-	λ (n m: N) => succ m,
+	λ n m => succ m,
 	b
 ).
 
 Definition ( * ) := λ (a b: N) => ind(
-	λ (n: N) => N,
+	λ n => N,
 	0,
-	λ (n m: N) => m + a,
+	λ n m => m + a,
 	b
 ).
 
 Definition ( ** ) := λ (a b: N) => ind(
-	λ (n: N) => N,
+	λ n => N,
 	1,
-	λ (n m: N) => m * a,
+	λ n m => m * a,
 	b
 ).
 
 Definition pred := λ (a: N) => ind(
-	λ (n: N) => N,
+	λ n => N,
 	0,
-	λ (n m: N) => n,
+	λ n m => n,
 	a
 ).
 
 Definition ( - ) := λ (a b: N) => ind(
-	λ (n: N) => N,
+	λ n => N,
 	a,
-	λ (n m: N) => pred m,
+	λ n m => pred m,
 	b
 ).
 
 Definition is_zero := λ (a: N) => ind(
-	λ (n: N) => N,
+	λ n => N,
 	1,
-	λ (n m: N) => 0,
+	λ n m => 0,
 	a
 ).
 
 Definition if_then_else := λ (a b c: N) => ind(
-	λ (n: N) => N,
+	λ n => N,
 	c,
-	λ (n m: N) => b,
+	λ n m => b,
 	a
 ).
 
@@ -60,18 +60,18 @@ Definition ( >= ) := λ (a b: N) => !(a < b).
 Definition ( == ) := λ (a b: N) => (a <= b) & (a >= b).
 
 Definition ( / ) := λ (a b: N) => ind(
-	λ (n: N) => N,
+	λ n => N,
 	0,
-	λ (n m: N) => if_then_else (n * b <= a) n m,
+	λ n m => if_then_else (n * b <= a) n m,
 	succ a
 ).
 
 Definition ( % ) := λ (a b: N) => a - a / b * b.
 
 Definition divisor_count := λ (a: N) => ind(
-	λ (n: N) => N,
+	λ n => N,
 	1,
-	λ (n m: N) => if_then_else (a % n) m (succ m),
+	λ n m => if_then_else (a % n) m (succ m),
 	a
 ).
 

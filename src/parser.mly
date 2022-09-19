@@ -87,14 +87,7 @@ plain_term:
   | e1=infix_term ARROW e2=term                 { Input.Arrow (e1, e2) }
   | LAMBDA a=lambda_abstraction DARROW e=term   { Input.Lambda (a, e) }
   | e=infix_term COLON t=term                   { Input.Ascribe (e, t) }
-  | SUCC e=term                                 { Input.Succ e }
-  | REFL e=term                                 { Input.Refl e }
-  | IND_EMPTY LPAREN e1=term COMMA e2=term RPAREN   { Input.IndEmpty (e1, e2) }
   | IDENTITY LPAREN e1=term COMMA e2=term RPAREN   { Input.Identity (e1, e2) }
-  | IND LPAREN e1=term COMMA e2=term COMMA e3=term COMMA e4=term RPAREN
-     { Input.IndNat (e1, e2, e3, e4) }
-  | IND_ID LPAREN e1=term COMMA e2=term COMMA e3=term RPAREN
-     { Input.IndId (e1, e2, e3) }
   | e1=infix_term EQUALS e2=infix_term { Input.Identity (e1, e2) }
 
 infix_term: mark_location(plain_infix_term) { $1 }
@@ -110,6 +103,13 @@ plain_infix_term:
 app_term: mark_location(plain_app_term) { $1 }
 plain_app_term:
   | e=plain_prefix_term          { e }
+  | SUCC e=prefix_term           { Input.Succ e }
+  | REFL e=prefix_term           { Input.Refl e }
+  | IND_EMPTY LPAREN e1=term COMMA e2=term RPAREN   { Input.IndEmpty (e1, e2) }
+  | IND LPAREN e1=term COMMA e2=term COMMA e3=term COMMA e4=term RPAREN
+     { Input.IndNat (e1, e2, e3, e4) }
+  | IND_ID LPAREN e1=term COMMA e2=term COMMA e3=term RPAREN
+     { Input.IndId (e1, e2, e3) }
   | e1=app_term e2=prefix_term   { Input.Apply (e1, e2) }
 
 prefix_term: mark_location(plain_prefix_term) { $1 }

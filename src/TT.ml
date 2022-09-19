@@ -255,10 +255,10 @@ and print_expr' ~penv ?max_level e ppf =
          (print_expr_with_parentheses_if_has_comma ?max_level ~penv e1)
          (print_expr_with_parentheses_if_has_comma ?max_level ~penv e2)
 
-      | Identity (t, e1, e2) -> Print.print ppf "%t=%t"
+      | Identity (t, e1, e2) -> Print.print ppf "%t = %t"
          (print_expr ?max_level ~penv e1) (print_expr ?max_level ~penv e2)
-      | Refl (t, e1) -> Print.print ppf "refl %t"
-         (print_expr ?max_level ~penv e1)
+      | Refl (t, e1) -> Print.print ppf ?max_level ~at_level:Level.app "refl@ %t"
+         (print_expr ~max_level:Level.app_right ~penv e1)
       | IndId (t, e1, e2, e3, e4, e5) -> Print.print ppf "ind_id(%t, %t, %t)"
          (print_expr_with_parentheses_if_has_comma ?max_level ~penv e1)
          (print_expr_with_parentheses_if_has_comma ?max_level ~penv e2)
@@ -372,8 +372,8 @@ and print_succ ?max_level ~penv e depth ppf =
 
 and wrap_in_n_succs ?max_level ~penv e n ppf =
   match n with
-    | 0 -> Print.print ppf "%t" (print_expr ?max_level ~penv e)
-    | n -> Print.print ppf "succ %t" (wrap_in_n_succs ?max_level ~penv e (n-1))
+    | 0 -> print_expr ~max_level:Level.app_right ~penv e ppf
+    | n -> Print.print ppf ?max_level ~at_level:Level.app "succ@ %t" (wrap_in_n_succs ~max_level:Level.app_right ~penv e (n-1))
 
 and print_expr_with_parentheses_if_has_comma ?max_level ~penv e ppf = (* TODO there is a better way to do this *)
   match e with

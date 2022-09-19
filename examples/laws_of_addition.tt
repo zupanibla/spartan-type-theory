@@ -1,58 +1,55 @@
 Load "examples/natural_numbers.tt".
 
-Definition right_unit_law := (λ (n: N) => refl n).
+Definition right_unit_law := λ (n: N) => refl n.
 Check right_unit_law: ∀ (n: N), n+0=n.
 
 
 Definition ap := λ (A B: Type) (f: A → B) (x y: A) (p: x=y) => ind_id(
-	λ (x y: A) (p: x=y) => f(x)=f(y),
-	λ (x: A) => refl(f(x)),
+	λ x y p => f x = f y,
+	λ x => refl (f x),
 	p
 ).
-Check ap: ∀ (A B: Type) (f: A → B) (x y: A), (x=y) → (f(x)=f(y)).
+Check ap: ∀ (A B: Type) (f: A → B) (x y: A), (x = y) → (f x = f y). (* TODO this doesn't get printed right *)
 
 
 Definition left_unit_law := λ (n: N) => ind(
-	λ (n: N) => 0+n=n,
+	λ n => 0+n=n,
 	refl 0,
-	λ (n: N) (p: 0+n=n) => ap N N (λ (n: N) => succ n) (0+n) n p,
+	λ n p => ap N N (λ (n: N) => succ n) (0+n) n p,
 	n
 ).
 Check left_unit_law: ∀ (n: N), 0+n=n.
 
 
-Definition right_successor_law := λ (n m: N) => (refl (succ (n + m))).
-Check right_successor_law: ∀ (n m: N), (n + (succ m)) = (succ (n + m)).
+Definition right_successor_law := λ (a b: N) => refl (succ (a + b)).
+Check right_successor_law: ∀ (a b: N), (a + (succ b)) = succ (a + b).
 
 
-Definition Q := λ (n m: N) => ((succ n) + m) = (succ (n + m)).
-
-Definition left_successor_law := λ (n m: N) => ind(
-	Q n,
-	refl (succ n),
-	λ (m: N) (p: (Q n m)) => ap N N (λ (n: N) => succ n) ((succ n) + m) (succ (n + m)) p,
-	m
+Definition left_successor_law := λ (a b: N) => ind(
+	λ b => (succ a) + b = succ (a + b),
+	refl (succ a),
+	λ b p => ap N N (λ (a: N) => succ a) ((succ a) + b) (succ (a + b)) p,
+	b
 ).
-Check left_successor_law: ∀ (n m: N), ((succ n) + m) = (succ (n + m)).
+Check left_successor_law: ∀ (a b: N), ((succ a) + b) = (succ (a + b)).
 
 
 Definition concat := λ (A: Type) (x y z: A) (p: x=y) => ind_id(
-	λ (x y: A) (p: x=y) => (y=z) -> (x=z),
-	λ (x: A) => λ (p: x=z) => p,
+	λ x y a => (y=z) → (x=z),
+	λ x => λ p => p,
 	p
 ).
-Check concat : ∀ (A: Type) (x y z: A), (x=y) -> (y=z) -> (x=z).
+Check concat : ∀ (A: Type) (x y z: A), (x=y) → (y=z) → (x=z).
 
 
-Definition R := λ (n m: N) => m+n = n+m.
-
-Definition commutativity := λ (n m: N) => ind(
-	R n,
-	left_unit_law n,
-	λ (m: N) (p: R n m) => concat N ((succ m)+n) (succ (m+n)) (n + (succ m))
-		(left_successor_law m n)
-		(ap N N (λ (n: N) => succ n) (m+n) (n+m) p),
-	m
+Definition commutativity := λ (a b: N) => ind(
+	λ a => a+b = b+a,
+	left_unit_law b,
+	λ a p =>
+		concat N ((succ a)+b) (succ (a+b)) (b + (succ a))
+			(left_successor_law a b)
+			(ap N N (λ (b: N) => succ b) (a+b) (b+a) p),
+	a
 ).
 
-Check commutativity : ∀ (n m: N), m+n = n+m.
+Check commutativity : ∀ (a b: N), a+b = b+a.
