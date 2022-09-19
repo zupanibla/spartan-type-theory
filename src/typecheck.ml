@@ -185,9 +185,10 @@ and check ctx ({Location.data=e'; loc} as e) ty =
        | None -> error ~loc (TypeExpectedButFunction ty)
        | Some ((x, t), u) ->
           let x' = TT.new_atom x in
-          let ctx = Context.extend_ident x' t ctx
-          and u = TT.unabstract_ty x' u in
-          check ctx e u
+          let ctx = Context.extend_ident x' t ctx in
+          let u = TT.unabstract_ty x' u in
+          let e = check ctx e u in
+          TT.Lambda ((x, t), e)
      end
 
   | Syntax.Lambda ((_, Some _), _)
