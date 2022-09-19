@@ -257,7 +257,7 @@ and print_expr' ~penv ?max_level e ppf =
 
       | Identity (t, e1, e2) -> Print.print ppf "%t=%t"
          (print_expr ?max_level ~penv e1) (print_expr ?max_level ~penv e2)
-      | Refl (t, e1) -> Print.print ppf "refl(%t)"
+      | Refl (t, e1) -> Print.print ppf "refl %t"
          (print_expr ?max_level ~penv e1)
       | IndId (t, e1, e2, e3, e4, e5) -> Print.print ppf "ind_id(%t, %t, %t)"
          (print_expr_with_parentheses_if_has_comma ?max_level ~penv e1)
