@@ -80,6 +80,13 @@ let as_prod ctx t =
   | TT.Prod ((x, t), u) -> Some ((x, t), u)
   | _ -> None
 
+(** Normalize a type to the identity type. *)
+let as_identity ctx t =
+  let TT.Ty t' = norm_ty ~strategy:WHNF ctx t in
+  match t' with
+  | TT.Identity (t, a, b) -> Some (t, a, b)
+  | _ -> None
+
 (** Compare expressions [e1] and [e2] at type [ty]? *)
 let rec expr ctx e1 e2 ty =
   (* short-circuit *)
