@@ -6,6 +6,7 @@ type type_error =
   | TypeExpected of TT.ty * TT.ty
   | TypeExpectedButFunction of TT.ty
   | FunctionExpected of TT.ty
+  | IdentificationExpected of TT.ty
   | CannotInferArgument of Name.ident
 
 exception Error of type_error Location.located
@@ -29,6 +30,10 @@ let print_error ~penv err ppf =
 
   | FunctionExpected ty ->
      Format.fprintf ppf "this expression should be a function but has type %t"
+                        (TT.print_ty ~penv ty)
+
+  | IdentificationExpected ty ->
+     Format.fprintf ppf "this expression should be an identification but has type %t"
                         (TT.print_ty ~penv ty)
 
   | CannotInferArgument x ->
@@ -136,47 +141,43 @@ let rec infer ctx {Location.data=e'; loc} =
 
   | Syntax.IndId (c, d, p') ->
      let p, pt = infer ctx p' in
-     let pt = Equal.norm_ty ~strategy:Equal.WHNF ctx pt in
-     let t, a, b = begin match pt with
-     | TT.Ty(TT.Identity(t, a, b)) -> t, a, b
-     (* there's probably a better way to handle this case*)
-     | _ -> (TT.Ty (check ctx p' (TT.Ty(TT.Identity(
-         TT.Ty(TT.Atom(TT.new_atom(Name.anonymous()))),
-         TT.Atom(TT.new_atom(Name.anonymous())),
-         TT.Atom(TT.new_atom(Name.anonymous()))
-      ))))),
-     TT.Atom(TT.new_atom(Name.anonymous())),
-     TT.Atom(TT.new_atom(Name.anonymous()))
-     end in
-     let c = check ctx c (
-         TT.Ty (TT.Prod ((Name.Ident ("x", Name.Word), t),
-            TT.Ty (TT.Prod ((Name.Ident ("y", Name.Word), t),
-               TT.Ty (TT.Prod ((Name.Ident ("p", Name.Word), TT.Ty (TT.Identity (t, TT.Bound(1), TT.Bound(0)))),
-                  TT.ty_Type
-               ))
-            ))
-         ))
-     ) in
-     let d = check ctx d (
-         TT.Ty (TT.Prod ((Name.Ident ("x", Name.Word), t), TT.Ty (
-            TT.Apply (
-               TT.Apply (
-                  TT.Apply (
-                     c,
-                     TT.Bound 0
-                  ),
-                  TT.Bound 0
-               ),
-               TT.Refl (t, TT.Bound 0)
-            )
-         )))
-     ) in
-     TT.IndId (t, c, d, a, b, p),
-     TT.Ty (TT.Apply (TT.Apply (TT.Apply (c, a), b), p))
+     begin
+     match Equal.as_identity ctx pt with
+     | None -> error ~loc (IdentificationExpected pt)
+     | Some (t, a, b) ->
+        begin
+             let c = check ctx c (
+                TT.Ty (TT.Prod ((Name.Ident ("x", Name.Word), t),
+                   TT.Ty (TT.Prod ((Name.Ident ("y", Name.Word), TT.shift_ty 1 t),
+                      TT.Ty (TT.Prod ((Name.Ident ("p", Name.Word), TT.Ty (TT.Identity (TT.shift_ty 2 t, TT.Bound 1, TT.Bound 0))),
+                         TT.ty_Type
+                      ))
+                   ))
+                ))
+             )
+             in
+             let d = check ctx d (
+                 TT.Ty (TT.Prod ((Name.Ident ("x", Name.Word), t), TT.Ty (
+                    TT.Apply (
+                       TT.Apply (
+                          TT.Apply (
+                             TT.shift 1 c,
+                             TT.Bound 0
+                          ),
+                          TT.Bound 0
+                       ),
+                       TT.Refl (TT.shift_ty 1 t, TT.Bound 0)
+                    )
+                 )))
+             ) in
+             TT.IndId (t, c, d, a, b, p),
+             TT.Ty (TT.Apply (TT.Apply (TT.Apply (c, a), b), p))
+        end
+     end
 
 (** [check ctx e ty] checks that [e] has type [ty] in context [ctx].
     It returns the processed expression [e]. *)
-and check ctx ({Location.data=e'; loc} as e) ty = (* TODO REVIEW *)
+and check ctx ({Location.data=e'; loc} as e) ty =
   match e' with
 
   | Syntax.Lambda ((y, None), e) ->

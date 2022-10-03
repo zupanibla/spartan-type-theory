@@ -101,10 +101,72 @@ let rec instantiate ?(lvl=0) e e' =
      and e5 = instantiate ~lvl e e5 in
      IndId (t, e1, e2, e3, e4, e5)
 
-
 (** [instantiate k e t] instantiates deBruijn index [k] with [e] in type [t]. *)
 and instantiate_ty ?(lvl=0) e (Ty t) =
   let t = instantiate ~lvl e t in
+  Ty t
+
+(** [shift ~lvl k e] shifts bound variables above lvl by k in expression [e]. *)
+let rec shift ?(lvl=0) k e =
+  match e with
+  | Bound j ->
+     if j >= lvl then Bound (j + k) else Bound j
+
+  | Atom y -> e
+
+  | Type -> e
+
+  | Prod ((y, t), u) ->
+     let t = shift_ty ~lvl k t
+     and u = shift_ty ~lvl:(lvl+1) k u in
+     Prod ((y, t), u)
+
+  | Lambda ((y, t), e) ->
+     let t = shift_ty ~lvl k t
+     and e = shift ~lvl:(lvl+1) k e in
+     Lambda ((y, t), e)
+
+  | Apply (e1, e2) ->
+     let e1 = shift ~lvl k e1
+     and e2 = shift ~lvl k e2 in
+     Apply (e1, e2)
+
+  | Nat     -> e
+  | Zero    -> e
+  | Succ e1 -> Succ (shift ~lvl k e1)
+  | IndNat (e1, e2, e3, e4) ->
+     let e1 = shift ~lvl k e1
+     and e2 = shift ~lvl k e2
+     and e3 = shift ~lvl k e3
+     and e4 = shift ~lvl k e4 in
+     IndNat (e1, e2, e3, e4)
+
+  | Empty -> e
+  | IndEmpty (e1, e2) -> IndEmpty (shift ~lvl k e1, shift ~lvl k e2)
+
+  | Identity (t, e1, e2) ->
+     let t  = shift_ty ~lvl k t
+     and e1 = shift ~lvl k e1
+     and e2 = shift ~lvl k e2 in
+     Identity (t, e1, e2)
+
+  | Refl (t, e1) ->
+     let t  = shift_ty ~lvl k t
+     and e1 = shift ~lvl k e1 in
+     Refl (t, e1)
+
+  | IndId (t, e1, e2, e3, e4, e5) ->
+     let t  = shift_ty ~lvl k t
+     and e1 = shift ~lvl k e1
+     and e2 = shift ~lvl k e2
+     and e3 = shift ~lvl k e3
+     and e4 = shift ~lvl k e4
+     and e5 = shift ~lvl k e5 in
+     IndId (t, e1, e2, e3, e4, e5)
+
+(** [shift_ty ~lvl k t] shifts atom [x] into bound index [lvl] in type [t]. *)
+and shift_ty ?(lvl=0) k (Ty t) =
+  let t = shift ~lvl k t in
   Ty t
 
 (** [abstract ~lvl x e] abstracts atom [x] into bound index [lvl] in expression [e]. *)

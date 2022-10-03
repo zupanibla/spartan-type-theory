@@ -45,6 +45,12 @@ val print_ty : ?max_level:Level.t -> penv:Name.ident list -> ty -> Format.format
 (** Create a fresh atom from an identifier. *)
 val new_atom : Name.ident -> atom
 
+(** [shift ~lvl k e] shifts bound variables above [lvl] by [k] in [e]. *)
+val shift : ?lvl:index -> int -> expr -> expr
+
+(** [shift_ty ~lvl k ty] shifts bound variables above [lvl] by [k] in [ty]. *)
+val shift_ty : ?lvl:index -> int -> ty -> ty
+
 (** [abstract x e] abstracts atom [x] into bound index [0] in expression [e], or
    into index [lvl] if given. *)
 val abstract : ?lvl:index -> atom -> expr -> expr

@@ -80,6 +80,13 @@ let as_prod ctx t =
   | TT.Prod ((x, t), u) -> Some ((x, t), u)
   | _ -> None
 
+(** Normalize a type to the identity type. *)
+let as_identity ctx t =
+  let TT.Ty t' = norm_ty ~strategy:WHNF ctx t in
+  match t' with
+  | TT.Identity (t, a, b) -> Some (t, a, b)
+  | _ -> None
+
 (** Compare expressions [e1] and [e2] at type [ty]? *)
 let rec expr ctx e1 e2 ty =
   (* short-circuit *)
@@ -201,13 +208,13 @@ and expr_whnf ctx e1 e2 =
      expr ctx p1 p2 (TT.Ty (TT.Identity (t, a, b))) &&
      let t = t1 in
      expr ctx c1 c2 (
-       TT.Ty (TT.Prod ((Name.Ident ("x", Name.Word), t),
-          TT.Ty (TT.Prod ((Name.Ident ("y", Name.Word), t),
-             TT.Ty (TT.Prod ((Name.Ident ("p", Name.Word), TT.Ty (TT.Identity (t, TT.Bound(1), TT.Bound(0)))),
-                TT.ty_Type
-             ))
-          ))
-       ))
+        TT.Ty (TT.Prod ((Name.Ident ("x", Name.Word), t),
+           TT.Ty (TT.Prod ((Name.Ident ("y", Name.Word), TT.shift_ty 1 t),
+              TT.Ty (TT.Prod ((Name.Ident ("p", Name.Word), TT.Ty (TT.Identity (TT.shift_ty 2 t, TT.Bound 1, TT.Bound 0))),
+                 TT.ty_Type
+              ))
+           ))
+        ))
      ) &&
      let t = t1 and c = c1 in
      expr ctx d1 d2 (
@@ -215,12 +222,12 @@ and expr_whnf ctx e1 e2 =
           TT.Apply (
              TT.Apply (
                 TT.Apply (
-                   c,
+                   TT.shift 1 c,
                    TT.Bound 0
                 ),
                 TT.Bound 0
              ),
-             TT.Refl (t, TT.Bound 0)
+             TT.Refl (TT.shift_ty 1 t, TT.Bound 0)
           )
        )))
      )
