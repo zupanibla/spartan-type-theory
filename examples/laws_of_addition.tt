@@ -1,15 +1,15 @@
 Load "examples/natural_numbers.tt".
 
 Definition right_unit_law := λ (n: N) => refl n.
-Check right_unit_law: ∀ (n: N), n+0=n.
+Check right_unit_law: ∀ (n: N), n + 0 = n.
 
 
-Definition ap := λ (A B: Type) (f: A → B) (x y: A) (p: x=y) => ind_id(
+Definition ap := λ (A B: Type) (f: A → B) (x y: A) (p: x = y) => ind_id(
 	λ x y p => f x = f y,
 	λ x => refl (f x),
 	p
 ).
-Check ap: ∀ (A B: Type) (f: A → B) (x y: A), (x = y) → (f x = f y). (* TODO this doesn't get printed right *)
+Check ap: ∀ (A B: Type) (f: A → B) (x y: A), x = y → f x = f y.
 
 
 Definition left_unit_law := λ (n: N) => ind(
@@ -18,38 +18,38 @@ Definition left_unit_law := λ (n: N) => ind(
 	λ n p => ap N N (λ (n: N) => succ n) (0+n) n p,
 	n
 ).
-Check left_unit_law: ∀ (n: N), 0+n=n.
+Check left_unit_law: ∀ (n: N), 0 + n = n.
 
 
 Definition right_successor_law := λ (a b: N) => refl (succ (a + b)).
-Check right_successor_law: ∀ (a b: N), (a + (succ b)) = succ (a + b).
+Check right_successor_law: ∀ (a b: N), a + succ b = succ (a + b).
 
 
 Definition left_successor_law := λ (a b: N) => ind(
-	λ b => (succ a) + b = succ (a + b),
+	λ b => succ a + b = succ (a + b),
 	refl (succ a),
-	λ b p => ap N N (λ (a: N) => succ a) ((succ a) + b) (succ (a + b)) p,
+	λ b p => ap N N (λ (a: N) => succ a) (succ a + b) (succ (a + b)) p,
 	b
 ).
-Check left_successor_law: ∀ (a b: N), ((succ a) + b) = (succ (a + b)).
+Check left_successor_law: ∀ (a b: N), succ a + b = succ (a + b).
 
 
-Definition concat := λ (A: Type) (x y z: A) (p: x=y) => ind_id(
-	λ x y a => (y=z) → (x=z),
+Definition concat := λ (A: Type) (x y z: A) (p: x = y) => ind_id(
+	λ x y a => y = z → x = z,
 	λ x => λ p => p,
 	p
 ).
-Check concat : ∀ (A: Type) (x y z: A), (x=y) → (y=z) → (x=z).
+Check concat : ∀ (A: Type) (x y z: A), x = y → y = z → x = z.
 
 
 Definition commutativity := λ (a b: N) => ind(
-	λ a => a+b = b+a,
+	λ a => a + b = b + a,
 	left_unit_law b,
 	λ a p =>
-		concat N ((succ a)+b) (succ (a+b)) (b + (succ a))
+		concat N (succ a + b) (succ (a + b)) (b + succ a)
 			(left_successor_law a b)
-			(ap N N (λ (b: N) => succ b) (a+b) (b+a) p),
+			(ap N N (λ (b: N) => succ b) (a + b) (b + a) p),
 	a
 ).
 
-Check commutativity : ∀ (a b: N), a+b = b+a.
+Check commutativity : ∀ (a b: N), a + b = b + a.

@@ -82,13 +82,17 @@ plain_topcomp:
 (* Main syntax tree *)
 term : mark_location(plain_term) { $1 }
 plain_term:
-  | e=plain_infix_term                          { e }
-  | PROD a=prod_abstraction COMMA e=term        { Input.Prod (a, e) }
-  | e1=infix_term ARROW e2=term                 { Input.Arrow (e1, e2) }
-  | LAMBDA a=lambda_abstraction DARROW e=term   { Input.Lambda (a, e) }
-  | e=infix_term COLON t=term                   { Input.Ascribe (e, t) }
+  | e=plain_equals_term                             { e }
+  | PROD a=prod_abstraction COMMA e=term           { Input.Prod (a, e) }
+  | e1=equals_term ARROW e2=term                   { Input.Arrow (e1, e2) }
+  | LAMBDA a=lambda_abstraction DARROW e=term      { Input.Lambda (a, e) }
+  | e=equals_term COLON t=term                     { Input.Ascribe (e, t) }
   | IDENTITY LPAREN e1=term COMMA e2=term RPAREN   { Input.Identity (e1, e2) }
-  | e1=infix_term EQUALS e2=infix_term { Input.Identity (e1, e2) }
+
+equals_term: mark_location(plain_equals_term) { $1 }
+plain_equals_term:
+    | e=plain_infix_term { e }
+    | e1=infix_term EQUALS e2=infix_term       { Input.Identity (e1, e2) }
 
 infix_term: mark_location(plain_infix_term) { $1 }
 plain_infix_term:
