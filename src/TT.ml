@@ -276,6 +276,21 @@ let print_binders ~penv print_u print_v xus ppf =
   Print.print ppf ",@ %t" (print_v ~penv) ;
   Format.pp_close_box ppf ()
 
+let print_lambda_binders ~penv print_u print_v xus ppf =
+  Format.pp_open_hovbox ppf 2 ;
+  let rec fold ~penv = function
+    | [] -> penv
+    | (x,u) :: xus ->
+       let y = Name.refresh penv x in
+       Print.print ppf "@;<1 -4>(%t : %t)"
+                   (Name.print_ident y)
+                   (print_u ~penv u) ;
+       fold ~penv:(add_forbidden y penv) xus
+  in
+  let penv = fold ~penv xus in
+  Print.print ppf " =>@ %t" (print_v ~penv) ;
+  Format.pp_close_box ppf ()
+
 let print_atom (x, _) ppf = Name.print_ident x ppf
 
 let print_debruijn xs k ppf =
@@ -399,7 +414,7 @@ and print_lambda ?max_level ~penv ((x, u), e) ppf =
   let xus, e = collect [(x,u)] e in
   Print.print ?max_level ~at_level:Level.binder ppf "%s%t"
     (Print.char_lambda ())
-    (print_binders ~penv
+    (print_lambda_binders ~penv
                    (print_ty ~max_level:Level.ascription)
                    (fun ~penv -> print_expr ~max_level:Level.in_binder ~penv e)
                    xus)
