@@ -1,7 +1,5 @@
 Load "examples/natural_numbers.tt".
 
-Definition pair := λ (a b i: N) => if_then_else i b a.
-
 Definition iter := λ (f: N -> N) => λ (n x: N) => ind(
     λ n => N,
     x,
@@ -12,6 +10,6 @@ Definition iter := λ (f: N -> N) => λ (n x: N) => ind(
 Definition A := λ (m: N) => ind(
     λ n => N -> N,
     λ n => n + 1,
-    λ m Am => λ n => iter Am (n+1) 1,
+    λ m Am => λ n => iter Am (n + 1) 1,
     m
 ).
