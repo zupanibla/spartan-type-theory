@@ -1,0 +1,30 @@
+Load "examples/natural_numbers.tt".
+
+Definition pair := λ (a b i: N) => if_then_else i b a. 
+
+Definition div_and_mod := λ (a b: N) => (λ (p: N -> N) => pair (p 0) ((pred b) - (p 1))) (ind(
+    λ n => N -> N,
+    pair 0 (pred b),
+    λ n p => pair ((p 0) + (!(p 1))) (if_then_else (p 1) (pred (p 1)) (pred b)),
+    a
+)).
+
+Definition mod := λ (a b: N) => div_and_mod a b 1.
+Definition div := λ (a b: N) => div_and_mod a b 0.
+
+Definition log2 := λ (a: N) => pred (ind(
+    λ n => N -> N,
+    pair a 0,
+    λ n p => pair (div (p 0) 2) ((p 1) + (if_then_else (p 0) 1 0)),
+    a
+) 1).
+
+Definition sqrt_upper_bound := λ (n: N) => 
+    (λ (p: N -> N) => 2**((p 0) + (p 1)))(div_and_mod ((log2 n) + 1) 2).
+
+Definition fast_is_prime := λ (a: N) => ind(
+    λ n => N,
+    0,
+    λ n m => if_then_else (mod a n) m (succ m),
+    sqrt_upper_bound a
+) == 2.
